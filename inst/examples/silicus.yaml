@@ -1,0 +1,339 @@
+# Silicus Genome Browser Configuration
+# Equivalent to ~/src/borzoi_finetune/analysis/config/silicus.yaml
+
+profiles:
+  local:
+    base_dir: "/home/aviezerl/src/borzoi_finetune"
+    data_dir: "data"
+    misha_root: /home/aviezerl/mm10
+  server:
+    misha_root: /misha_dbs/mm10/trackdb/
+
+# Starting position
+start:
+  gene: Tbx5
+  span_bp: 2000000
+
+# UI Settings
+ui:
+  title: "Mus Silicus Genome Viewer"
+  span_default: 2000000
+  smooth_window_default: 100
+  show_coordinates: true
+
+# Plot settings
+plot:
+  iterator: 32
+  expansion: 12000
+  target_points: 4000
+  theme: bw
+
+# Navigator for gene selection
+navigator:
+  source: /home/aviezerl/src/borzoi_finetune/data/mm10_cgdom.csv
+  label_field: tss_gene
+  # source: intervs.global.tss
+  # label_field: geneSymbol
+  extension: 1000000
+
+# Color definitions
+colors:
+  silicus_cgd: "#4DAF4A"
+  silicus_cgd_ctcf: "#984EA3"
+  silicus_ctcf: "#FF7F00"
+  silicus: "#E41A1C"
+  borzoi: "#377EB8"
+  obs: "black"
+  chip: "orange"
+  atac: "purple"
+  norm: "#00CED1"
+  mm10_no_cg: "#66C2A5"
+  mm10_no_cg_cgd: "#A6D854"
+  mm10_no_cg_cgd_ctcf: "#8DA0CB"
+  mm10_no_cg_ctcf: "#FC8D62"
+  randomicus: "#E78AC3"
+  randomicus_cgd: "#FFD92F"
+  randomicus_cgd_ctcf: "#B3B3B3"
+  randomicus_ctcf: "#B15928"
+  _default: grey50
+
+# Virtual track definitions
+vtracks:
+  # Silicus with CGD
+  - name: silicus_cgd.k27
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_CGD_exp250.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: silicus_cgd.k4
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_CGD_exp250.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Silicus with CGD + CTCF
+  - name: silicus_cgd_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: silicus_cgd_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Silicus with CTCF only
+  - name: silicus_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: silicus_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Silicus base
+  - name: silicus.k27
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: silicus.k4
+    src: seq.IQ.pcg.borzoi.mus_silicus_cg_gc_lower.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Borzoi (original model)
+  - name: borzoi.k27
+    src: seq.IQ.pcg.borzoi.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: borzoi.k4
+    src: seq.IQ.pcg.borzoi.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Observed ChIP-seq (our data)
+  - name: obs.k27
+    src: jk.epipcg.pcg.CRJK_0364_k27me3_eb_j1_d4_a
+    func: sum
+    sshift: -140
+    eshift: 140
+  - name: obs.k4
+    src: jk.epipcg.pcg.CRJK_0411_k4me3_wt_to_wt_eb_d3
+    func: sum
+    sshift: -140
+    eshift: 140
+
+  # ENCODE ChIP-seq
+  - name: chip.k27
+    src: jk.epipcg.lit.encode.es.ENCFF595SIA_H3K27me3_es
+    func: sum
+    sshift: -140
+    eshift: 140
+  - name: chip.k4
+    src: jk.epipcg.lit.encode.es.ENCFF381OST_H3K4me3_es
+    func: sum
+    sshift: -140
+    eshift: 140
+
+  # mm10 without CG variants
+  - name: mm10_no_cg.k27
+    src: seq.IQ.pcg.borzoi.mm10_without_CG.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg.k4
+    src: seq.IQ.pcg.borzoi.mm10_without_CG.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_cgd.k27
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_CGD_exp250.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_cgd.k4
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_CGD_exp250.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_cgd_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_cgd_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: mm10_no_cg_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mm10_without_CG_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # Randomicus variants
+  - name: randomicus.k27
+    src: seq.IQ.pcg.borzoi.mus_randomicus.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: randomicus.k4
+    src: seq.IQ.pcg.borzoi.mus_randomicus.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: randomicus_cgd.k27
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_CGD.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: randomicus_cgd.k4
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_CGD.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: randomicus_cgd_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: randomicus_cgd_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_CGD_exp250_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+  - name: randomicus_ctcf.k27
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_ctcf.finetune_524k_EB4_cnt_no_atac_cropped
+    func: sum
+  - name: randomicus_ctcf.k4
+    src: seq.IQ.pcg.borzoi.mus_randomicus_with_ctcf.finetune_524k_EB4_cnt_k4_no_atac_cropped
+    func: sum
+
+  # ATAC-seq
+  - name: atac_epiblast
+    src: or_rk_sf.epi
+    func: sum
+    sshift: -140
+    eshift: 140
+
+  # Normalized prediction (with expression wrapper to clamp negative values)
+  - name: norm.k27
+    src: at.EB4_norm_300
+    func: sum
+    sshift: -140
+    eshift: 140
+    expression: "pmax(norm.k27, 0)"  # Clamp to >= 0
+
+# Panel definitions
+panels:
+  # Gene annotation panel
+  - name: genes
+    type: annotation
+    exon_source: intervs.global.exon
+    tss_source: intervs.global.tss
+    gene_label_field: geneSymbol
+    color: navy
+    show_strand_arrows: true
+    height: 1
+
+  # Main signal panel with faceting by mark
+  - name: signal
+    type: data
+    tracks:
+      - silicus_cgd.k27
+      - silicus_cgd.k4
+      - silicus.k27
+      - silicus.k4
+      - silicus_cgd_ctcf.k27
+      - silicus_cgd_ctcf.k4
+      - chip.k27
+      - chip.k4
+      - borzoi.k27
+      - borzoi.k4
+      - obs.k27
+      - obs.k4
+      - norm.k27
+    grouping:
+      color_by: source
+      pattern: "^(?<source>.+)\\.(?<mark>.+)$"
+      overrides:
+        norm.k27:
+          source: norm
+          mark: k27
+    facet_by: mark
+    transforms:
+      - type: smooth
+        window: 10
+      - type: log2
+        offset: 1
+    plot_type: line
+    colors:
+      silicus_cgd: "#4DAF4A"
+      silicus_cgd_ctcf: "#984EA3"
+      silicus: "#E41A1C"
+      borzoi: "#377EB8"
+      obs: black
+      chip: orange
+      norm: "#00CED1"
+    ylim: [0, 10]
+    height: 4
+    show_legend: true
+    hlines:
+      - "y": 6
+        color: black
+        linetype: solid
+        label: "6.0 line"
+      # - stat: mean
+      #   color: blue
+      #   linetype: dashed
+      #   label: "Mean"
+
+  # ATAC-seq panel
+  - name: atac
+    type: data
+    tracks: [atac_epiblast]
+    transforms:
+      - type: smooth
+        window: 5
+      - type: log2
+        offset: 1
+    plot_type: area
+    fill: purple
+    color: purple
+    ylim: [2, 10]
+    y_title: "ATAC"
+    height: 1
+    show_legend: false
+
+  # GC content panel
+  - name: gc_content
+    type: data
+    tracks: [seq.GC200_bin20]
+    transforms:
+      - type: smooth
+        window: 10
+    plot_type: line
+    fill: grey30
+    color: grey30
+    ylim: [0.3, 0.7]
+    y_labels: percent
+    y_title: "GC %"
+    height: 0.8
+    show_legend: false
+
+  # CpG content panel
+  - name: cpg_content
+    type: data
+    tracks: [seq.CG_500_mean_new]
+    transforms:
+      - type: smooth
+        window: 10
+    plot_type: area
+    fill: darkorange
+    color: darkorange
+    ylim: [0, 0.1]
+    y_title: "CpG cont."
+    height: 0.8
+    show_legend: false
+
+  # # Repeat masker intervals
+  # - name: repeats
+  #   type: intervals
+  #   intervals: intervs.global.rmsk
+  #   color_by: class
+  #   filter_field: class
+  #   filter_values: [LINE, LTR]
+
+
+  # # Ideogram panel
+  # - name: ideogram
+  #   type: ideogram
+  #   cytoband_track: intervs.global.cytoband
+  #   highlight_current: true
+  #   height: 0.3
+
+
+
+# Vertical lines
+vlines:
+  - name: cgd_regions
+    source: file
+    file: ./mm10_cgdom.csv
+    color: grey50
+    linetype: dashed
+    show_bounds: true
+    enabled: true
+
+  - name: ctcf_hits
+    source: file
+    file: ./ctcf_hits_1bp.tsv
+    color: yellow
+    linetype: dashed
+    show_bounds: true
+    enabled: true

@@ -1,0 +1,46 @@
+Package: misha.browser
+Title: Interactive Genome Browser for Misha Tracks
+Version: 0.1.0
+Authors@R: c(
+    person("Aviezer", "Lifshitz", email = "aviezer.lifshitz@weizmann.ac.il", role = c("aut", "cre")), 
+    person("Weizmann Institute of Science", role="cph")
+    )
+Description: A configurable, interactive genome browser built on ggplot2 and
+    patchwork. Provides YAML-based configuration for visualization of misha
+    genomic tracks with support for custom transformations, faceting, vertical
+    line annotations, and gene models. Includes a Shiny application for
+    interactive exploration.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    misha,
+    magrittr,
+    ggplot2 (>= 3.4.0),
+    patchwork,
+    data.table,
+    dplyr,
+    tidyr,
+    zoo,
+    yaml,
+    shiny,
+    shinyWidgets,
+    bslib,
+    colourpicker,
+    shinyjs,
+    shinycssloaders,
+    rlang,
+    cli,
+    digest,
+    readr,
+    scales,
+    tools
+Suggests:
+    testthat (>= 3.0.0),
+    future,
+    promises,
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr

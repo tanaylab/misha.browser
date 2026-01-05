@@ -1,0 +1,50 @@
+# Default configuration for misha.browser
+
+# Plot settings
+plot:
+  iterator: 32              # Base iterator for data extraction (bin size in bp)
+  expansion: 0              # Expand region by this many bp on each side
+  theme: bw                 # ggplot2 theme
+  target_points: 4000       # Target number of data points (used in dynamic mode)
+  smoothing_bp: 3200        # Smoothing window in bp (used in dynamic_smooth mode)
+  # Extraction mode:
+  #   "fixed"   - Use fixed iterator + rollmean smoothing. Best for vtracks with
+  #               func=sum where values scale with bin size. Matches original silicus.
+  #   "dynamic" - Adjust iterator based on view span (like misha.vis). The iterator
+  #               provides smoothing via aggregation, so rollmean is skipped.
+  #               More efficient for large regions.
+  #   "dynamic_smooth" - Adjust iterator for resolution AND dynamically set vtrack
+  #               sshift/eshift for smoothing. Combines adaptive resolution with
+  #               proper value scaling. Uses smoothing_bp config (or smooth_window state).
+  extraction_mode: fixed
+
+# UI settings
+ui:
+  title: "Genome Browser"
+  span_default: 2000000
+  smooth_window_default: 10
+  show_coordinates: true
+
+# Navigator settings (region selector)
+navigator:
+  source: intervs.global.tss
+  label_field: geneSymbol
+  extension: 1000000
+
+# Default colors
+colors:
+  _default: grey50
+
+# Default transform presets
+transform_presets:
+  signal:
+    - type: smooth
+      window: 10
+    - type: log2
+      offset: 1
+  coverage:
+    - type: smooth
+      window: 5
+  methylation:
+    - type: smooth
+      window: 10

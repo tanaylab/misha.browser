@@ -1,0 +1,287 @@
+# transforms.R - Data transformation pipeline for misha.browser
+
+#' Apply a transformation pipeline to data
+#'
+#' Uses vectorized matrix operations where possible for performance.
+#' Transforms that can be vectorized: log2, log10, sqrt, clip
+#' Transforms that need per-column processing: smooth, zscore, minmax, quantile, expr
+#'
+#' @param data Data frame with columns: chrom, start, end, pos, and value columns
+#' @param transforms List of transform specifications
+#' @param value_cols Column names containing values to transform
+#' @return Transformed data frame
+#' @keywords internal
+apply_transforms <- function(data, transforms, value_cols) {
+    if (length(transforms) == 0) {
+        return(data)
+    }
+    if (length(value_cols) == 0) {
+        return(data)
+    }
+
+    # Filter to columns that exist
+    value_cols <- intersect(value_cols, names(data))
+    if (length(value_cols) == 0) {
+        return(data)
+    }
+
+    for (transform in transforms) {
+        type <- transform$type
+        if (is.null(type)) next
+
+        # Vectorizable transforms - apply as matrix operation
+        if (type %in% c("log2", "log10", "sqrt", "clip")) {
+            mat <- as.matrix(data[, value_cols, drop = FALSE])
+            mat <- switch(type,
+                "log2" = {
+                    offset <- transform$offset %||% 1
+                    log2(mat + offset)
+                },
+                "log10" = {
+                    offset <- transform$offset %||% 1
+                    log10(mat + offset)
+                },
+                "sqrt" = sqrt(pmax(mat, 0)),
+                "clip" = {
+                    mn <- transform$min
+                    mx <- transform$max
+                    if (!is.null(mn)) mat <- pmax(mat, mn)
+                    if (!is.null(mx)) mat <- pmin(mat, mx)
+                    mat
+                }
+            )
+            data[, value_cols] <- mat
+        } else {
+            # Per-column transforms (need column-specific stats or position)
+            for (col in value_cols) {
+                data[[col]] <- apply_single_transform(
+                    x = data[[col]],
+                    pos = data$pos,
+                    type = type,
+                    params = transform
+                )
+            }
+        }
+    }
+
+    data
+}
+
+#' Apply a single transform to a vector
+#'
+#' @param x Numeric vector to transform
+#' @param pos Position vector (for position-aware transforms)
+#' @param type Transform type
+#' @param params Transform parameters
+#' @return Transformed vector
+#' @keywords internal
+apply_single_transform <- function(x, pos = NULL, type, params) {
+    switch(type,
+        "smooth" = transform_smooth(x, params),
+        "log2" = transform_log2(x, params),
+        "log10" = transform_log10(x, params),
+        "sqrt" = transform_sqrt(x, params),
+        "zscore" = transform_zscore(x, params),
+        "minmax" = transform_minmax(x, params),
+        "clip" = transform_clip(x, params),
+        "quantile" = transform_quantile(x, params),
+        "expr" = transform_expr(x, pos, params),
+        {
+            cli::cli_warn("Unknown transform type: {type}")
+            x
+        }
+    )
+}
+
+#' Smooth transform (rolling mean)
+#'
+#' @param x Numeric vector
+#' @param params List with: window (required), align ("center", "left", "right")
+#' @return Smoothed vector
+#' @keywords internal
+transform_smooth <- function(x, params) {
+    window <- params$window %||% 10
+    align <- params$align %||% "center"
+
+    if (length(x) < window) {
+        return(x)
+    }
+    if (sum(!is.na(x)) < 2) {
+        return(x)
+    }
+
+    zoo::rollmean(x, k = window, fill = "extend", align = align, na.rm = TRUE)
+}
+
+#' Log2 transform
+#'
+#' @param x Numeric vector
+#' @param params List with: offset (default 1)
+#' @return Log2-transformed vector
+#' @keywords internal
+transform_log2 <- function(x, params) {
+    offset <- params$offset %||% 1
+    log2(x + offset)
+}
+
+#' Log10 transform
+#'
+#' @param x Numeric vector
+#' @param params List with: offset (default 1)
+#' @return Log10-transformed vector
+#' @keywords internal
+transform_log10 <- function(x, params) {
+    offset <- params$offset %||% 1
+    log10(x + offset)
+}
+
+#' Square root transform
+#'
+#' @param x Numeric vector
+#' @param params List (unused)
+#' @return Square root of vector
+#' @keywords internal
+transform_sqrt <- function(x, params) {
+    sqrt(pmax(x, 0))
+}
+
+#' Z-score normalization
+#'
+#' @param x Numeric vector
+#' @param params List (unused)
+#' @return Z-score normalized vector
+#' @keywords internal
+transform_zscore <- function(x, params) {
+    m <- mean(x, na.rm = TRUE)
+    s <- stats::sd(x, na.rm = TRUE)
+    if (is.na(s) || s == 0) {
+        return(x - m)
+    }
+    (x - m) / s
+}
+
+#' Min-max normalization
+#'
+#' Scales values to the range 0 to 1.
+#'
+#' @param x Numeric vector
+#' @param params List (unused)
+#' @return Normalized vector scaled between 0 and 1
+#' @keywords internal
+transform_minmax <- function(x, params) {
+    mn <- min(x, na.rm = TRUE)
+    mx <- max(x, na.rm = TRUE)
+    if (!is.finite(mn) || !is.finite(mx) || mn == mx) {
+        return(rep(0.5, length(x)))
+    }
+    (x - mn) / (mx - mn)
+}
+
+#' Clip values to range
+#'
+#' @param x Numeric vector
+#' @param params List with: min, max
+#' @return Clipped vector
+#' @keywords internal
+transform_clip <- function(x, params) {
+    mn <- params$min
+    mx <- params$max
+    if (!is.null(mn)) x <- pmax(x, mn)
+    if (!is.null(mx)) x <- pmin(x, mx)
+    x
+}
+
+#' Quantile normalization
+#'
+#' @param x Numeric vector
+#' @param params List with: probs (quantile probabilities, default c(0.01, 0.99))
+#' @return Quantile-clipped vector
+#' @keywords internal
+transform_quantile <- function(x, params) {
+    probs <- params$probs %||% c(0.01, 0.99)
+    q <- stats::quantile(x, probs = probs, na.rm = TRUE)
+    pmin(pmax(x, q[1]), q[2])
+}
+
+#' Custom expression transform
+#'
+#' @param x Numeric vector
+#' @param pos Position vector
+#' @param params List with: expr (R expression as string)
+#' @return Transformed vector
+#' @keywords internal
+transform_expr <- function(x, pos, params) {
+    expr_str <- params$expr
+    if (is.null(expr_str)) {
+        cli::cli_warn("Transform 'expr' requires 'expr' parameter")
+        return(x)
+    }
+
+    tryCatch(
+        {
+            # Create environment with x and pos available
+            env <- new.env(parent = baseenv())
+            env$x <- x
+            env$pos <- pos
+
+            # Evaluate expression
+            result <- eval(parse(text = expr_str), envir = env)
+
+            if (length(result) != length(x)) {
+                cli::cli_warn("Transform expr result length mismatch")
+                return(x)
+            }
+
+            result
+        },
+        error = function(e) {
+            cli::cli_warn("Transform expr failed: {e$message}")
+            x
+        }
+    )
+}
+
+#' Get smooth window from browser state
+#'
+#' Adjusts smooth window from config based on current state.
+#'
+#' @param browser Browser object
+#' @param panel Panel configuration
+#' @return Effective smooth window value
+#' @keywords internal
+get_effective_smooth_window <- function(browser, panel) {
+    # Start with panel-specific or global default
+    base_window <- browser$state$smooth_window %||%
+        browser$cfg$ui$smooth_window_default %||%
+        10
+
+    # Look for smooth transform in panel to get its window
+    for (transform in panel$transforms) {
+        if (transform$type == "smooth") {
+            # If panel has explicit window, use that as multiplier base
+            if (!is.null(transform$window)) {
+                # Scale by state smooth window relative to default
+                default_window <- browser$cfg$ui$smooth_window_default %||% 10
+                scale <- base_window / default_window
+                return(ceiling(transform$window * scale))
+            }
+        }
+    }
+
+    base_window
+}
+
+#' Update smooth transforms in panel with new window
+#'
+#' @param transforms List of transforms
+#' @param smooth_window New smooth window value
+#' @return Updated transforms list
+#' @keywords internal
+update_smooth_window <- function(transforms, smooth_window) {
+    lapply(transforms, function(t) {
+        if (t$type == "smooth") {
+            t$window <- smooth_window
+        }
+        t
+    })
+}
