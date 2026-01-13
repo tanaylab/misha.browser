@@ -123,9 +123,38 @@ create_vtrack <- function(vt, cfg = NULL) {
     # Build gvtrack.create arguments
     create_args <- list(vtrack = vt$name)
 
+    # Determine vtype if not set
+    func <- vt$func %||% "sum"
+    vtype <- vt$vtype
+    if (is.null(vtype)) {
+        if (is_sequence_function(func)) {
+            vtype <- "sequence"
+        } else if (is_intervals_function(func)) {
+            vtype <- "intervals"
+        } else {
+            vtype <- "standard"
+        }
+    }
+
     # Source: NULL for sequence-based, track/intervals for others
-    if (vt$vtype == "sequence") {
+    if (vtype == "sequence") {
         create_args$src <- NULL
+    } else if (vtype == "intervals" || is_intervals_function(func)) {
+        # Resolve intervals source (handles @uploaded:, database intervals, file paths)
+        src <- vt$src
+        if (!is.null(src) && nchar(src) > 0) {
+            resolved_src <- tryCatch(
+                resolve_intervals_source(src),
+                error = function(e) {
+                    # Fall back to using src directly if resolution fails
+                    cli::cli_warn("Could not resolve intervals source '{src}': {e$message}")
+                    src
+                }
+            )
+            create_args$src <- resolved_src
+        } else {
+            create_args$src <- vt$src
+        }
     } else {
         create_args$src <- vt$src
     }
@@ -139,26 +168,41 @@ create_vtrack <- function(vt, cfg = NULL) {
     if (!is.null(vt$params)) {
         params <- vt$params
 
-        # Special handling for PSSM files
-        if (!is.null(params$pssm) && is.character(params$pssm)) {
-            pssm_path <- resolve_path(params$pssm, cfg)
-            if (file.exists(pssm_path)) {
-                params$pssm <- as.matrix(utils::read.csv(pssm_path, row.names = 1))
+        # Handle PSSM resolution for PWM functions
+        if (is_pwm_function(func) && !is.null(params$pssm)) {
+            if (is.character(params$pssm)) {
+                # Resolve PSSM source (handles @uploaded:, prego motifs, file paths)
+                params$pssm <- tryCatch(
+                    resolve_pssm_source(params$pssm),
+                    error = function(e) {
+                        # Try legacy path resolution
+                        pssm_path <- resolve_path(params$pssm, cfg)
+                        if (file.exists(pssm_path)) {
+                            as.matrix(utils::read.csv(pssm_path, row.names = 1))
+                        } else {
+                            stop("Could not resolve PSSM: ", e$message)
+                        }
+                    }
+                )
             }
         }
 
         # Add params to create_args
-        for (pname in names(params)) {
-            create_args[[pname]] <- params[[pname]]
-        }
-        # Handle unnamed single param (e.g., quantile percentile)
-        if (is.null(names(params)) && length(params) == 1) {
+        if (is.list(params) && !is.null(names(params))) {
+            for (pname in names(params)) {
+                create_args[[pname]] <- params[[pname]]
+            }
+        } else if (length(params) == 1 && !is.list(params)) {
+            # Handle unnamed single param (e.g., quantile percentile, neighbor.count distance)
+            create_args$params <- params
+        } else if (is.list(params) && is.null(names(params)) && length(params) == 1) {
             create_args$params <- params[[1]]
         }
     }
 
     # Filter
     if (!is.null(vt$filter)) create_args$filter <- vt$filter
+
     # Create the vtrack
     do.call(misha::gvtrack.create, create_args)
 

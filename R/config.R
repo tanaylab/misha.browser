@@ -5,7 +5,11 @@
 #' @param file Path to YAML configuration file
 #' @param profile Profile name to use (default: auto-detect)
 #' @return Parsed and validated configuration list
-#' @noRd
+#' @export
+#' @examples
+#' \dontrun{
+#' cfg <- browser_load_config("my_browser.yaml")
+#' }
 browser_load_config <- function(file, profile = NULL) {
     if (!file.exists(file)) {
         cli::cli_abort("Configuration file not found: {file}")
@@ -405,25 +409,10 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
 #'
 #' @param cfg Configuration list
 #' @param file Output file path
-#' @noRd
+#' @export
 browser_save_config <- function(cfg, file) {
     # Remove internal fields before saving
-    cfg_clean <- cfg
-    cfg_clean <- cfg_clean[!grepl("^\\._", names(cfg_clean))]
-
-    # Clean up panels
-    if (!is.null(cfg_clean$panels)) {
-        cfg_clean$panels <- lapply(cfg_clean$panels, function(p) {
-            p[!grepl("^\\._", names(p))]
-        })
-    }
-
-    # Clean up vlines
-    if (!is.null(cfg_clean$vlines)) {
-        cfg_clean$vlines <- lapply(cfg_clean$vlines, function(v) {
-            v[!grepl("^\\._", names(v))]
-        })
-    }
+    cfg_clean <- clean_config_for_export(cfg)
 
     yaml::write_yaml(cfg_clean, file)
     cli::cli_alert_success("Configuration saved to {file}")

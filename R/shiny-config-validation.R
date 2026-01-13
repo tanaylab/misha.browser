@@ -158,23 +158,67 @@ validate_vtrack_full <- function(vtrack, index) {
         errors[[paste0(prefix, "name")]] <- "Invalid vtrack name (use letters, numbers, dots, underscores)"
     }
 
-    # Determine vtrack type
-    vtype <- vtrack$vtype %||% "standard"
-    if (!is.null(vtrack$expr)) vtype <- "expr"
-    if (!is.null(vtrack$seq_func)) vtype <- "sequence"
+    # Determine vtrack type based on function
+    func <- vtrack$func %||% "sum"
+    vtype <- vtrack$vtype
+    if (is.null(vtype)) {
+        if (!is.null(vtrack$expr)) {
+            vtype <- "expr"
+        } else if (is_sequence_function(func)) {
+            vtype <- "sequence"
+        } else if (is_intervals_function(func)) {
+            vtype <- "intervals"
+        } else {
+            vtype <- "standard"
+        }
+    }
 
-    # Source track validation (for standard vtracks)
-    if (vtype == "standard") {
+    # All valid functions
+    all_valid_funcs <- unlist(get_vtrack_function_choices())
+
+    # Function validation
+    if (!is.null(func) && !func %in% all_valid_funcs) {
+        errors[[paste0(prefix, "func")]] <- paste("Invalid function:", func)
+    }
+
+    # Source validation based on function type
+    if (vtype == "standard" || requires_source_track(func)) {
+        # Standard vtracks need a source track
         if (is_empty(vtrack$src)) {
-            errors[[paste0(prefix, "src")]] <- "Source track is required for standard vtracks"
-        } else if (!track_exists(vtrack$src)) {
+            errors[[paste0(prefix, "src")]] <- "Source track is required"
+        } else if (!grepl("^@uploaded:", vtrack$src) && !track_exists(vtrack$src)) {
             errors[[paste0(prefix, "src")]] <- paste("Track not found:", vtrack$src)
         }
+    } else if (vtype == "intervals" || is_intervals_function(func)) {
+        # Intervals vtracks need an intervals source
+        if (is_empty(vtrack$src)) {
+            errors[[paste0(prefix, "src")]] <- "Intervals source is required"
+        }
+        # We don't validate existence of @uploaded: sources (they're session-scoped)
+        # For database intervals, check existence
+        if (!is_empty(vtrack$src) && !grepl("^@uploaded:", vtrack$src) && !grepl("^/", vtrack$src)) {
+            if (!intervals_exist(vtrack$src)) {
+                errors[[paste0(prefix, "src")]] <- paste("Intervals not found:", vtrack$src)
+            }
+        }
+    }
+    # Sequence functions don't need source validation
 
-        # Function validation
-        valid_funcs <- c("sum", "avg", "min", "max", "stddev", "quantile")
-        if (!is.null(vtrack$func) && !vtrack$func %in% valid_funcs) {
-            errors[[paste0(prefix, "func")]] <- paste("Function must be one of:", paste(valid_funcs, collapse = ", "))
+    # PWM function parameter validation
+    if (is_pwm_function(func)) {
+        params <- vtrack$params
+        if (is.null(params) || is_empty(params$pssm)) {
+            errors[[paste0(prefix, "pssm")]] <- "PSSM is required for PWM functions"
+        }
+    }
+
+    # Kmer function parameter validation
+    if (is_kmer_function(func)) {
+        params <- vtrack$params
+        if (is.null(params) || is_empty(params$kmer)) {
+            errors[[paste0(prefix, "kmer")]] <- "K-mer sequence is required"
+        } else if (!grepl("^[ACGTacgt]+$", params$kmer)) {
+            errors[[paste0(prefix, "kmer")]] <- "K-mer must contain only A, C, G, T characters"
         }
     }
 

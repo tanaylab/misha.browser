@@ -401,10 +401,27 @@ browser_server <- function(browser) {
             if (is.null(reg)) {
                 return("Viewing: invalid region")
             }
+            highlight <- br$state$highlight
+            highlight_text <- "Highlight: none"
+            if (!is.null(highlight) && nrow(highlight) > 0) {
+                start <- suppressWarnings(as.numeric(highlight$start[1]))
+                end <- suppressWarnings(as.numeric(highlight$end[1]))
+                if (is.finite(start) && is.finite(end)) {
+                    if (end < start) {
+                        tmp <- start
+                        start <- end
+                        end <- tmp
+                    }
+                    highlight_text <- sprintf("Highlight: %s bp", scales::comma(max(0, end - start)))
+                } else {
+                    highlight_text <- "Highlight: invalid"
+                }
+            }
             sprintf(
-                "Viewing: %s (Width: %s bp)",
+                "Viewing: %s (Width: %s bp) | %s",
                 format_coords(reg$chrom, reg$start, reg$end),
-                scales::comma(get_span(reg))
+                scales::comma(get_span(reg)),
+                highlight_text
             )
         })
 

@@ -324,6 +324,10 @@ get_track_choices <- function(browser) {
             all_tracks <- c(all_tracks, unlist(panel$tracks))
         }
     }
+    ui_defaults <- browser$cfg$ui$default_tracks
+    if (!is.null(ui_defaults)) {
+        all_tracks <- c(all_tracks, as.character(unlist(ui_defaults, use.names = FALSE)))
+    }
     unique(all_tracks)
 }
 
@@ -333,6 +337,18 @@ get_track_choices <- function(browser) {
 #' @return Character vector of default track names
 #' @keywords internal
 get_default_tracks <- function(browser) {
+    defaults <- browser$cfg$ui$default_tracks
+    if (!is.null(defaults)) {
+        defaults <- as.character(unlist(defaults, use.names = FALSE))
+        defaults <- defaults[nzchar(defaults)]
+        if (length(defaults) > 0) {
+            choices <- get_track_choices(browser)
+            defaults <- defaults[defaults %in% choices]
+            if (length(defaults) > 0) {
+                return(defaults)
+            }
+        }
+    }
     # Return tracks from first data panel as defaults
     for (panel in browser$cfg$panels) {
         if (panel$type == "data" && !is.null(panel$tracks)) {

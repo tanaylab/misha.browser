@@ -23,6 +23,9 @@ browser_run <- function(browser, port = 8911, host = "0.0.0.0", launch.browser =
         cli::cli_abort("browser_run requires a browser object created with browser_create()")
     }
 
+    # Set max upload size to 100MB (default is 5MB)
+    options(shiny.maxRequestSize = 100 * 1024^2)
+
     # Create UI and server
     profile <- getOption("misha.browser.profile", FALSE)
     run_timings <- list()

@@ -70,6 +70,10 @@ create_config_modal <- function(ns, cfg) {
             bslib::nav_panel(
                 "Vlines",
                 config_vlines_tab_ui(ns, cfg)
+            ),
+            bslib::nav_panel(
+                "Uploads",
+                config_uploads_tab_ui(ns, cfg)
             )
         )
     )
@@ -349,6 +353,46 @@ config_vlines_tab_ui <- function(ns, cfg) {
     )
 }
 
+#' Uploads tab UI
+#' @keywords internal
+config_uploads_tab_ui <- function(ns, cfg) {
+    shiny::tagList(
+        # Intervals Section
+        shiny::div(
+            class = "mb-4",
+            shiny::h5(
+                shiny::icon("map-marker-alt"),
+                " Intervals",
+                shiny::actionButton(
+                    ns("add_intervals"),
+                    "Add",
+                    class = "btn-primary btn-sm float-end",
+                    icon = shiny::icon("plus")
+                )
+            ),
+            shiny::hr(),
+            shiny::uiOutput(ns("uploaded_intervals_list"))
+        ),
+
+        # PSSMs Section
+        shiny::div(
+            class = "mb-4",
+            shiny::h5(
+                shiny::icon("dna"),
+                " PSSMs (Motif Matrices)",
+                shiny::actionButton(
+                    ns("add_pssm"),
+                    "Add",
+                    class = "btn-primary btn-sm float-end",
+                    icon = shiny::icon("plus")
+                )
+            ),
+            shiny::hr(),
+            shiny::uiOutput(ns("uploaded_pssms_list"))
+        )
+    )
+}
+
 #' Config Editor Module Server
 #'
 #' @param id Module namespace ID
@@ -369,6 +413,10 @@ config_editor_server <- function(id, browser_rv, original_config) {
         draft_colors <- shiny::reactiveVal(list())
         draft_vlines <- shiny::reactiveVal(list())
 
+        # Uploaded data (intervals, PSSMs)
+        uploaded_intervals <- shiny::reactiveVal(list())
+        uploaded_pssms <- shiny::reactiveVal(list())
+
         # Initialize draft when modal opens
         shiny::observeEvent(browser_rv(),
             {
@@ -377,7 +425,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
                     draft_cfg(cfg)
                     draft_vtracks(cfg$vtracks %||% list())
                     draft_panels(cfg$panels %||% list())
-                    draft_colors(as.list(cfg$colors %||% list()))
+                    draft_colors(expand_colors_with_tracks(cfg$colors, cfg$panels))
                     draft_vlines(cfg$vlines %||% list())
                 }
             },
@@ -395,10 +443,153 @@ config_editor_server <- function(id, browser_rv, original_config) {
 
             vtrack_items <- lapply(seq_along(vtracks), function(i) {
                 vt <- vtracks[[i]]
+                func <- vt$func %||% "sum"
+                func_id <- ns(paste0("vt_func_", i))
+
+                # Determine what source UI to show based on function
+                source_ui <- if (is_intervals_function(func)) {
+                    # Intervals source dropdown
+                    intervals_choices <- build_intervals_choices(uploaded_intervals())
+                    shiny::selectizeInput(
+                        ns(paste0("vt_intervals_src_", i)),
+                        "Intervals Source",
+                        choices = intervals_choices,
+                        selected = vt$src %||% "",
+                        options = list(placeholder = "Select intervals...")
+                    )
+                } else if (is_sequence_function(func)) {
+                    # No source needed for sequence functions
+                    shiny::tags$p(
+                        shiny::tags$em("No source required (uses genome sequence)"),
+                        class = "text-muted small",
+                        style = "margin-top: 30px;"
+                    )
+                } else {
+                    # Regular track source
+                    shiny::textInput(
+                        ns(paste0("vt_src_", i)),
+                        "Source Track",
+                        value = vt$src %||% ""
+                    )
+                }
+
+                # Function-specific parameters
+                func_params_ui <- if (is_pwm_function(func)) {
+                    # PWM parameters
+                    pssm_choices <- build_pssm_choices(uploaded_pssms())
+                    params <- vt$params %||% list()
+                    shiny::tagList(
+                        shiny::fluidRow(
+                            shiny::column(
+                                4,
+                                shiny::selectizeInput(
+                                    ns(paste0("vt_pssm_", i)),
+                                    "PSSM",
+                                    choices = pssm_choices,
+                                    selected = params$pssm %||% "",
+                                    options = list(placeholder = "Select PSSM...")
+                                )
+                            ),
+                            shiny::column(
+                                2,
+                                shiny::checkboxInput(
+                                    ns(paste0("vt_bidirect_", i)),
+                                    "Bidirectional",
+                                    value = params$bidirect %||% TRUE
+                                )
+                            ),
+                            shiny::column(
+                                2,
+                                shiny::numericInput(
+                                    ns(paste0("vt_prior_", i)),
+                                    "Prior",
+                                    value = params$prior %||% 0.01,
+                                    min = 0, max = 1, step = 0.01
+                                )
+                            ),
+                            shiny::column(
+                                2,
+                                shiny::checkboxInput(
+                                    ns(paste0("vt_extend_", i)),
+                                    "Extend",
+                                    value = params$extend %||% TRUE
+                                )
+                            ),
+                            if (func == "pwm.count") {
+                                shiny::column(
+                                    2,
+                                    shiny::numericInput(
+                                        ns(paste0("vt_score_thresh_", i)),
+                                        "Score Thresh",
+                                        value = params$score.thresh %||% params$score_thresh %||% 0,
+                                        step = 0.1
+                                    )
+                                )
+                            }
+                        )
+                    )
+                } else if (is_kmer_function(func)) {
+                    # Kmer parameters
+                    params <- vt$params %||% list()
+                    shiny::fluidRow(
+                        shiny::column(
+                            4,
+                            shiny::textInput(
+                                ns(paste0("vt_kmer_", i)),
+                                "K-mer Sequence",
+                                value = params$kmer %||% "",
+                                placeholder = "e.g., CG, ATCG"
+                            )
+                        ),
+                        shiny::column(
+                            3,
+                            shiny::selectInput(
+                                ns(paste0("vt_kmer_strand_", i)),
+                                "Strand",
+                                choices = c("Both" = "0", "Forward" = "1", "Reverse" = "-1"),
+                                selected = as.character(params$strand %||% 0)
+                            )
+                        )
+                    )
+                } else if (func == "neighbor.count") {
+                    # neighbor.count max distance
+                    params <- vt$params
+                    max_dist <- if (is.numeric(params)) params else 0
+                    shiny::fluidRow(
+                        shiny::column(
+                            4,
+                            shiny::numericInput(
+                                ns(paste0("vt_max_dist_", i)),
+                                "Max Distance",
+                                value = max_dist,
+                                min = 0, step = 1000
+                            )
+                        )
+                    )
+                } else if (func == "quantile") {
+                    # quantile percentile
+                    params <- vt$params
+                    percentile <- if (is.numeric(params)) params else 0.5
+                    shiny::fluidRow(
+                        shiny::column(
+                            4,
+                            shiny::numericInput(
+                                ns(paste0("vt_quantile_", i)),
+                                "Percentile",
+                                value = percentile,
+                                min = 0, max = 1, step = 0.01
+                            )
+                        )
+                    )
+                } else {
+                    NULL
+                }
+
                 shiny::div(
                     class = "card mb-2",
                     shiny::div(
                         class = "card-body py-2",
+                        # Row 1: Name, Function, sshift, eshift, Delete
                         shiny::fluidRow(
                             shiny::column(
                                 3,
@@ -410,33 +601,11 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             ),
                             shiny::column(
                                 3,
-                                shiny::textInput(
-                                    ns(paste0("vt_src_", i)),
-                                    "Source Track",
-                                    value = vt$src %||% ""
-                                )
-                            ),
-                            shiny::column(
-                                2,
                                 shiny::selectInput(
                                     ns(paste0("vt_func_", i)),
                                     "Function",
-                                    choices = list(
-                                        "Track Summary" = c("avg", "sum", "min", "max", "stddev", "quantile", "nearest", "size"),
-                                        "Point Values" = c("first", "last", "sample", "exists"),
-                                        "Global Stats" = c("global.percentile", "global.percentile.max", "global.percentile.min")
-                                        # "Positions" = c(
-                                        #     "max.pos.abs", "max.pos.relative", "min.pos.abs", "min.pos.relative",
-                                        #     "first.pos.abs", "first.pos.relative", "last.pos.abs", "last.pos.relative",
-                                        #     "sample.pos.abs", "sample.pos.relative"
-                                        # ),
-                                        # "Intervals" = c("distance", "distance.center", "distance.edge", "coverage", "neighbor.count")
-                                        # "Sequence & Motifs" = c(
-                                        #     "pwm", "pwm.max", "pwm.max.pos", "pwm.count",
-                                        #     "kmer.count", "kmer.frac", "masked.count", "masked.frac"
-                                        # )
-                                    ),
-                                    selected = vt$func %||% "sum"
+                                    choices = get_vtrack_function_choices(),
+                                    selected = func
                                 )
                             ),
                             shiny::column(
@@ -454,20 +623,9 @@ config_editor_server <- function(id, browser_rv, original_config) {
                                     "eshift",
                                     value = vt$eshift %||% 0
                                 )
-                            )
-                        ),
-                        shiny::fluidRow(
-                            shiny::column(
-                                8,
-                                shiny::textInput(
-                                    ns(paste0("vt_expr_", i)),
-                                    "Expression Wrapper",
-                                    value = vt$expression %||% "",
-                                    placeholder = "e.g., pmax(vtrack_name, 0)"
-                                )
                             ),
                             shiny::column(
-                                4,
+                                2,
                                 shiny::div(
                                     style = "margin-top: 25px;",
                                     shiny::actionButton(
@@ -476,6 +634,24 @@ config_editor_server <- function(id, browser_rv, original_config) {
                                         icon = shiny::icon("trash"),
                                         class = "btn-outline-danger btn-sm"
                                     )
+                                )
+                            )
+                        ),
+                        # Row 2: Source (conditional based on function type)
+                        shiny::fluidRow(
+                            shiny::column(6, source_ui)
+                        ),
+                        # Row 3: Function-specific parameters (if any)
+                        func_params_ui,
+                        # Row 4: Expression wrapper
+                        shiny::fluidRow(
+                            shiny::column(
+                                8,
+                                shiny::textInput(
+                                    ns(paste0("vt_expr_", i)),
+                                    "Expression Wrapper",
+                                    value = vt$expression %||% "",
+                                    placeholder = "e.g., pmax(vtrack_name, 0)"
                                 )
                             )
                         )
@@ -663,6 +839,37 @@ config_editor_server <- function(id, browser_rv, original_config) {
                     },
                     ignoreInit = TRUE,
                     once = TRUE
+                )
+            })
+        })
+
+        # Function change observers - update vtrack to trigger UI refresh
+        shiny::observe({
+            vtracks <- draft_vtracks()
+            lapply(seq_along(vtracks), function(i) {
+                shiny::observeEvent(input[[paste0("vt_func_", i)]],
+                    {
+                        new_func <- input[[paste0("vt_func_", i)]]
+                        current <- draft_vtracks()
+                        if (i <= length(current) && !is.null(new_func)) {
+                            old_func <- current[[i]]$func %||% "sum"
+                            # Only update if function type category changed
+                            old_type <- if (is_intervals_function(old_func)) "intervals" else if (is_sequence_function(old_func)) "sequence" else "standard"
+                            new_type <- if (is_intervals_function(new_func)) "intervals" else if (is_sequence_function(new_func)) "sequence" else "standard"
+                            if (old_type != new_type) {
+                                # Capture current input values before refresh
+                                current[[i]]$name <- input[[paste0("vt_name_", i)]] %||% current[[i]]$name
+                                current[[i]]$sshift <- input[[paste0("vt_sshift_", i)]] %||% current[[i]]$sshift
+                                current[[i]]$eshift <- input[[paste0("vt_eshift_", i)]] %||% current[[i]]$eshift
+                                current[[i]]$expression <- input[[paste0("vt_expr_", i)]] %||% current[[i]]$expression
+                                # Clear source when changing type (different input field)
+                                current[[i]]$src <- ""
+                            }
+                            current[[i]]$func <- new_func
+                            draft_vtracks(current)
+                        }
+                    },
+                    ignoreInit = TRUE
                 )
             })
         })
@@ -983,6 +1190,434 @@ config_editor_server <- function(id, browser_rv, original_config) {
             })
         })
 
+        # ==================== UPLOADS CRUD ====================
+
+        # Render uploaded intervals list
+        output$uploaded_intervals_list <- shiny::renderUI({
+            intervals <- uploaded_intervals()
+            if (length(intervals) == 0) {
+                return(shiny::tags$p("No intervals uploaded.", class = "text-muted"))
+            }
+
+            interval_items <- lapply(names(intervals), function(name) {
+                item <- intervals[[name]]
+                shiny::div(
+                    class = "card mb-2",
+                    shiny::div(
+                        class = "card-body py-2",
+                        shiny::fluidRow(
+                            shiny::column(
+                                4,
+                                shiny::tags$strong(name)
+                            ),
+                            shiny::column(
+                                3,
+                                shiny::tags$span(item$filename, class = "text-muted")
+                            ),
+                            shiny::column(
+                                3,
+                                shiny::tags$span(
+                                    paste(item$rows, "rows"),
+                                    class = "text-muted"
+                                )
+                            ),
+                            shiny::column(
+                                2,
+                                shiny::actionButton(
+                                    ns(paste0("delete_intervals_", name)),
+                                    "",
+                                    icon = shiny::icon("trash"),
+                                    class = "btn-outline-danger btn-sm"
+                                )
+                            )
+                        )
+                    )
+                )
+            })
+
+            shiny::tagList(interval_items)
+        })
+
+        # Render uploaded PSSMs list
+        output$uploaded_pssms_list <- shiny::renderUI({
+            pssms <- uploaded_pssms()
+            if (length(pssms) == 0) {
+                return(shiny::tags$p("No PSSMs uploaded.", class = "text-muted"))
+            }
+
+            pssm_items <- lapply(names(pssms), function(name) {
+                item <- pssms[[name]]
+                shiny::div(
+                    class = "card mb-2",
+                    shiny::div(
+                        class = "card-body py-2",
+                        shiny::fluidRow(
+                            shiny::column(
+                                4,
+                                shiny::tags$strong(name)
+                            ),
+                            shiny::column(
+                                3,
+                                shiny::tags$span(item$filename, class = "text-muted")
+                            ),
+                            shiny::column(
+                                3,
+                                shiny::tags$span(item$dimensions, class = "text-muted")
+                            ),
+                            shiny::column(
+                                2,
+                                shiny::actionButton(
+                                    ns(paste0("delete_pssm_", name)),
+                                    "",
+                                    icon = shiny::icon("trash"),
+                                    class = "btn-outline-danger btn-sm"
+                                )
+                            )
+                        )
+                    )
+                )
+            })
+
+            shiny::tagList(pssm_items)
+        })
+
+        # Add intervals - show modal
+        shiny::observeEvent(input$add_intervals, {
+            shiny::showModal(shiny::modalDialog(
+                title = "Add Intervals",
+                size = "m",
+                shiny::textInput(
+                    ns("new_intervals_name"),
+                    "Name (used to reference in vtracks)",
+                    placeholder = "e.g., my_peaks"
+                ),
+                shiny::radioButtons(
+                    ns("intervals_source_type"),
+                    "Source",
+                    choices = c(
+                        "Upload File" = "upload",
+                        "File Path" = "path",
+                        "Intervals Set" = "set"
+                    ),
+                    selected = "upload"
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'upload'", ns("intervals_source_type")),
+                    shiny::fileInput(
+                        ns("intervals_file"),
+                        "Choose File",
+                        accept = c(".bed", ".tsv", ".txt", ".csv")
+                    ),
+                    shiny::helpText("Formats: BED, TSV (chrom, start, end)")
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'path'", ns("intervals_source_type")),
+                    shiny::textInput(
+                        ns("intervals_path"),
+                        "File Path",
+                        placeholder = "/path/to/intervals.tsv"
+                    )
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'set'", ns("intervals_source_type")),
+                    shiny::selectizeInput(
+                        ns("intervals_set"),
+                        "Intervals Set",
+                        choices = tryCatch(
+                            misha::gintervals.ls(),
+                            error = function(e) character(0)
+                        ),
+                        options = list(placeholder = "Select intervals set...")
+                    )
+                ),
+                footer = shiny::tagList(
+                    shiny::actionButton(ns("cancel_add_intervals"), "Cancel"),
+                    shiny::actionButton(ns("confirm_add_intervals"), "Add",
+                        class = "btn-primary"
+                    )
+                )
+            ))
+        })
+
+        # Cancel add intervals - return to config editor
+        shiny::observeEvent(input$cancel_add_intervals, {
+            shiny::removeModal()
+            shiny::showModal(create_config_modal(ns, draft_cfg()))
+        })
+
+        # Confirm add intervals
+        shiny::observeEvent(input$confirm_add_intervals, {
+            name <- input$new_intervals_name
+            source_type <- input$intervals_source_type
+
+            # Validate name
+            if (is.null(name) || name == "") {
+                shiny::showNotification("Please enter a name", type = "error")
+                return()
+            }
+
+            # Check if name already exists
+            if (name %in% names(uploaded_intervals())) {
+                shiny::showNotification("An intervals set with this name already exists",
+                    type = "error"
+                )
+                return()
+            }
+
+            # Parse intervals based on source type
+            intervals_data <- tryCatch(
+                {
+                    if (source_type == "upload") {
+                        file_info <- input$intervals_file
+                        if (is.null(file_info)) {
+                            stop("Please select a file")
+                        }
+                        list(
+                            data = parse_intervals_file(file_info$datapath),
+                            filename = file_info$name
+                        )
+                    } else if (source_type == "path") {
+                        path <- input$intervals_path
+                        if (is.null(path) || path == "") {
+                            stop("Please enter a file path")
+                        }
+                        list(
+                            data = parse_intervals_file(path),
+                            filename = basename(path)
+                        )
+                    } else if (source_type == "set") {
+                        set_name <- input$intervals_set
+                        if (is.null(set_name) || set_name == "") {
+                            stop("Please select an intervals set")
+                        }
+                        list(
+                            data = misha::gintervals.load(set_name),
+                            filename = set_name
+                        )
+                    }
+                },
+                error = function(e) {
+                    shiny::showNotification(
+                        paste("Error loading intervals:", e$message),
+                        type = "error"
+                    )
+                    NULL
+                }
+            )
+
+            if (is.null(intervals_data)) {
+                return()
+            }
+
+            # Store in reactive value
+            current <- uploaded_intervals()
+            current[[name]] <- list(
+                data = intervals_data$data,
+                filename = intervals_data$filename,
+                rows = nrow(intervals_data$data)
+            )
+            uploaded_intervals(current)
+
+            # Also store in global upload storage for use in vtracks
+            store_uploaded_intervals(name, intervals_data$data, intervals_data$filename)
+
+            shiny::removeModal()
+            shiny::showNotification(
+                paste("Intervals '", name, "' added successfully"),
+                type = "message"
+            )
+
+            # Re-show config editor modal
+            shiny::showModal(create_config_modal(ns, draft_cfg()))
+        })
+
+        # Add PSSM - show modal
+        shiny::observeEvent(input$add_pssm, {
+            # Get prego motif choices (cached)
+            prego_choices <- get_prego_motif_choices()
+
+            shiny::showModal(shiny::modalDialog(
+                title = "Add PSSM",
+                size = "m",
+                shiny::textInput(
+                    ns("new_pssm_name"),
+                    "Name (used to reference in vtracks)",
+                    placeholder = "e.g., my_motif"
+                ),
+                shiny::radioButtons(
+                    ns("pssm_source_type"),
+                    "Source",
+                    choices = c(
+                        "Prego Motif" = "prego",
+                        "Upload File" = "upload",
+                        "File Path" = "path"
+                    ),
+                    selected = "prego"
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'prego'", ns("pssm_source_type")),
+                    shiny::selectizeInput(
+                        ns("prego_motif"),
+                        "Prego Motif",
+                        choices = prego_choices,
+                        options = list(
+                            placeholder = "Search motifs...",
+                            maxOptions = 100
+                        )
+                    )
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'upload'", ns("pssm_source_type")),
+                    shiny::fileInput(
+                        ns("pssm_file"),
+                        "Choose File",
+                        accept = c(".tsv", ".txt", ".csv", ".meme", ".jaspar")
+                    ),
+                    shiny::helpText("Formats: TSV (A,C,G,T cols), MEME, JASPAR")
+                ),
+                shiny::conditionalPanel(
+                    condition = sprintf("input['%s'] == 'path'", ns("pssm_source_type")),
+                    shiny::textInput(
+                        ns("pssm_path"),
+                        "File Path",
+                        placeholder = "/path/to/motif.pssm"
+                    )
+                ),
+                footer = shiny::tagList(
+                    shiny::actionButton(ns("cancel_add_pssm"), "Cancel"),
+                    shiny::actionButton(ns("confirm_add_pssm"), "Add",
+                        class = "btn-primary"
+                    )
+                )
+            ))
+        })
+
+        # Cancel add PSSM - return to config editor
+        shiny::observeEvent(input$cancel_add_pssm, {
+            shiny::removeModal()
+            shiny::showModal(create_config_modal(ns, draft_cfg()))
+        })
+
+        # Confirm add PSSM
+        shiny::observeEvent(input$confirm_add_pssm, {
+            name <- input$new_pssm_name
+            source_type <- input$pssm_source_type
+
+            # Validate name
+            if (is.null(name) || name == "") {
+                shiny::showNotification("Please enter a name", type = "error")
+                return()
+            }
+
+            # Check if name already exists
+            if (name %in% names(uploaded_pssms())) {
+                shiny::showNotification("A PSSM with this name already exists",
+                    type = "error"
+                )
+                return()
+            }
+
+            # Parse PSSM based on source type
+            pssm_data <- tryCatch(
+                {
+                    if (source_type == "prego") {
+                        motif_name <- input$prego_motif
+                        if (is.null(motif_name) || motif_name == "") {
+                            stop("Please select a motif")
+                        }
+                        list(
+                            data = get_prego_pssm(motif_name),
+                            filename = motif_name
+                        )
+                    } else if (source_type == "upload") {
+                        file_info <- input$pssm_file
+                        if (is.null(file_info)) {
+                            stop("Please select a file")
+                        }
+                        list(
+                            data = parse_pssm_file(file_info$datapath),
+                            filename = file_info$name
+                        )
+                    } else if (source_type == "path") {
+                        path <- input$pssm_path
+                        if (is.null(path) || path == "") {
+                            stop("Please enter a file path")
+                        }
+                        list(
+                            data = parse_pssm_file(path),
+                            filename = basename(path)
+                        )
+                    }
+                },
+                error = function(e) {
+                    shiny::showNotification(
+                        paste("Error loading PSSM:", e$message),
+                        type = "error"
+                    )
+                    NULL
+                }
+            )
+
+            if (is.null(pssm_data)) {
+                return()
+            }
+
+            # Store in reactive value
+            current <- uploaded_pssms()
+            current[[name]] <- list(
+                data = pssm_data$data,
+                filename = pssm_data$filename,
+                dimensions = paste0(nrow(pssm_data$data), "x", ncol(pssm_data$data))
+            )
+            uploaded_pssms(current)
+
+            # Also store in global upload storage for use in vtracks
+            store_uploaded_pssm(name, pssm_data$data, pssm_data$filename)
+
+            shiny::removeModal()
+            shiny::showNotification(
+                paste("PSSM '", name, "' added successfully"),
+                type = "message"
+            )
+
+            # Re-show config editor modal
+            shiny::showModal(create_config_modal(ns, draft_cfg()))
+        })
+
+        # Delete intervals observers (dynamic)
+        shiny::observe({
+            intervals <- uploaded_intervals()
+            lapply(names(intervals), function(name) {
+                shiny::observeEvent(input[[paste0("delete_intervals_", name)]],
+                    {
+                        current <- uploaded_intervals()
+                        current[[name]] <- NULL
+                        uploaded_intervals(current)
+                        delete_uploaded_intervals(name)
+                    },
+                    ignoreInit = TRUE,
+                    once = TRUE
+                )
+            })
+        })
+
+        # Delete PSSM observers (dynamic)
+        shiny::observe({
+            pssms <- uploaded_pssms()
+            lapply(names(pssms), function(name) {
+                shiny::observeEvent(input[[paste0("delete_pssm_", name)]],
+                    {
+                        current <- uploaded_pssms()
+                        current[[name]] <- NULL
+                        uploaded_pssms(current)
+                        delete_uploaded_pssm(name)
+                    },
+                    ignoreInit = TRUE,
+                    once = TRUE
+                )
+            })
+        })
+
         # ==================== PANEL HLINES ====================
 
         # Render hlines for each panel
@@ -1239,7 +1874,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             draft_cfg(original_config)
             draft_vtracks(original_config$vtracks %||% list())
             draft_panels(original_config$panels %||% list())
-            draft_colors(as.list(original_config$colors %||% list()))
+            draft_colors(expand_colors_with_tracks(original_config$colors, original_config$panels))
             draft_vlines(original_config$vlines %||% list())
 
             shiny::showNotification("Reset to original configuration", type = "message")
@@ -1273,7 +1908,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
                     draft_cfg(cfg)
                     draft_vtracks(cfg$vtracks %||% list())
                     draft_panels(cfg$panels %||% list())
-                    draft_colors(as.list(cfg$colors %||% list()))
+                    draft_colors(expand_colors_with_tracks(cfg$colors, cfg$panels))
                     draft_vlines(cfg$vlines %||% list())
 
                     shiny::showModal(create_config_modal(ns, cfg))
@@ -1626,11 +2261,67 @@ build_config_from_inputs <- function(input, vtracks, panels, colors, vlines, bas
     cfg$vtracks <- lapply(seq_along(vtracks), function(i) {
         vt <- vtracks[[i]] %||% list()
         vt$name <- input[[paste0("vt_name_", i)]] %||% vt$name
-        vt$src <- input[[paste0("vt_src_", i)]] %||% vt$src
         vt$func <- input[[paste0("vt_func_", i)]] %||% vt$func
         vt$sshift <- input[[paste0("vt_sshift_", i)]] %||% vt$sshift
         vt$eshift <- input[[paste0("vt_eshift_", i)]] %||% vt$eshift
-        vt$expression <- input[[paste0("vt_expr_", i)]] %||% vt$expression
+        expr_val <- input[[paste0("vt_expr_", i)]]
+        # Default expression to name if empty
+        vt$expression <- if (is.null(expr_val) || expr_val == "") vt$name else expr_val
+
+        func <- vt$func
+
+        # Handle source based on function type
+        if (is_intervals_function(func)) {
+            # Intervals source
+            vt$src <- input[[paste0("vt_intervals_src_", i)]] %||% vt$src
+        } else if (is_sequence_function(func)) {
+            # No source for sequence functions
+            vt$src <- NULL
+        } else {
+            # Regular track source
+            vt$src <- input[[paste0("vt_src_", i)]] %||% vt$src
+        }
+
+        # Handle function-specific parameters
+        if (is_pwm_function(func)) {
+            # PWM parameters
+            pssm <- input[[paste0("vt_pssm_", i)]]
+            if (!is.null(pssm) && nchar(pssm) > 0) {
+                vt$params <- list(
+                    pssm = pssm,
+                    bidirect = input[[paste0("vt_bidirect_", i)]] %||% TRUE,
+                    prior = input[[paste0("vt_prior_", i)]] %||% 0.01,
+                    extend = input[[paste0("vt_extend_", i)]] %||% TRUE
+                )
+                if (func == "pwm.count") {
+                    vt$params$score_thresh <- input[[paste0("vt_score_thresh_", i)]] %||% 0
+                }
+            }
+        } else if (is_kmer_function(func)) {
+            # Kmer parameters
+            kmer <- input[[paste0("vt_kmer_", i)]]
+            if (!is.null(kmer) && nchar(kmer) > 0) {
+                strand_str <- input[[paste0("vt_kmer_strand_", i)]] %||% "0"
+                vt$params <- list(
+                    kmer = kmer,
+                    strand = as.integer(strand_str)
+                )
+            }
+        } else if (func == "neighbor.count") {
+            # Max distance parameter
+            max_dist <- input[[paste0("vt_max_dist_", i)]]
+            if (!is.null(max_dist) && is.finite(max_dist)) {
+                vt$params <- max_dist
+            }
+        } else if (func == "quantile") {
+            # Percentile parameter
+            percentile <- input[[paste0("vt_quantile_", i)]]
+            if (!is.null(percentile) && is.finite(percentile)) {
+                vt$params <- percentile
+            }
+        }
+
+        # Handle transforms
         vt_transforms <- vt$transforms %||% list()
         new_transforms <- list()
 
@@ -1785,12 +2476,27 @@ build_config_from_inputs <- function(input, vtracks, panels, colors, vlines, bas
     })
 
     # Colors - read from form inputs
+    auto_names <- attr(colors, "auto_names")
+    if (is.null(auto_names)) {
+        auto_names <- character(0)
+    }
+    auto_default <- colors[["_default"]] %||% "grey50"
     new_colors <- list()
     for (i in seq_along(colors)) {
         name <- input[[paste0("color_name_", i)]] %||% names(colors)[i]
         value <- input[[paste0("color_value_", i)]] %||% colors[[i]]
         if (!is.null(name) && nchar(name) > 0) {
             new_colors[[name]] <- value
+        }
+    }
+    if (length(auto_names) > 0 && length(new_colors) > 0) {
+        for (name in auto_names) {
+            if (!is.null(new_colors[[name]])) {
+                auto_color <- generate_color(name, auto_default)
+                if (identical(new_colors[[name]], auto_color)) {
+                    new_colors[[name]] <- NULL
+                }
+            }
         }
     }
     cfg$colors <- new_colors
@@ -1822,14 +2528,47 @@ build_config_from_inputs <- function(input, vtracks, panels, colors, vlines, bas
     cfg
 }
 
+#' Expand colors list with track names for UI display
+#' @keywords internal
+expand_colors_with_tracks <- function(colors, panels) {
+    base_colors <- colors %||% list()
+    if (!is.list(base_colors)) {
+        base_colors <- as.list(base_colors)
+    }
+
+    track_names <- character(0)
+    if (!is.null(panels)) {
+        for (panel in panels) {
+            if (panel$type == "data" && !is.null(panel$tracks)) {
+                track_names <- c(track_names, unlist(panel$tracks))
+            }
+        }
+    }
+    track_names <- unique(as.character(track_names))
+    track_names <- track_names[!is.na(track_names) & nzchar(track_names)]
+
+    known_names <- names(base_colors)
+    if (is.null(known_names)) {
+        known_names <- character(0)
+    }
+    auto_names <- setdiff(track_names, known_names)
+    auto_default <- base_colors[["_default"]] %||% "grey50"
+    for (name in auto_names) {
+        base_colors[[name]] <- generate_color(name, auto_default)
+    }
+    attr(base_colors, "auto_names") <- auto_names
+
+    base_colors
+}
+
 #' Clean configuration for YAML export
 #' @keywords internal
 clean_config_for_export <- function(cfg) {
-    # Remove internal fields that start with ._
+    # Remove internal fields that start with .
     remove_internal <- function(x) {
         if (is.list(x)) {
-            # Remove fields starting with ._
-            to_remove <- grep("^\\._", names(x), value = TRUE)
+            # Remove fields starting with .
+            to_remove <- grep("^\\.", names(x), value = TRUE)
             for (field in to_remove) {
                 x[[field]] <- NULL
             }
