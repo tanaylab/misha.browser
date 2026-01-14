@@ -208,8 +208,10 @@ colors:
   _default: grey50
 ```
 
-Colors are matched by name. When a value is missing, a deterministic hash-based
-color is generated; `_default` is used as a fallback.
+Colors are matched by name. If a value ends with `.k4` or `.k27`, the base name
+without the suffix is also checked (for example, `silicus.k27` falls back to
+`silicus`). When a value is missing, a deterministic hash-based color is
+generated; `_default` is used as a fallback.
 
 ## Virtual tracks (`vtracks`)
 

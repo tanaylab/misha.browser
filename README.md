@@ -489,6 +489,10 @@ colors:
   _default: grey50  # Fallback color
 ```
 
+Colors are matched by name. If a value ends with `.k4` or `.k27`, the base name
+without the suffix is also checked (for example, `silicus.k27` falls back to
+`silicus`).
+
 ## Shiny App Features
 
 The interactive Shiny application provides:

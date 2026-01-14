@@ -173,8 +173,9 @@ get_panel_colors <- function(panel, data, color_by, config_colors = NULL) {
     default_color <- config_colors[["_default"]] %||% "grey50"
 
     for (val in unique_vals) {
-        if (val %in% names(config_colors)) {
-            colors[val] <- config_colors[[val]]
+        resolved <- lookup_color_value(val, config_colors)
+        if (!is.null(resolved)) {
+            colors[val] <- resolved
         } else {
             # Generate consistent color based on name
             colors[val] <- generate_color(val, default_color)

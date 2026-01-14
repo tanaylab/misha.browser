@@ -244,10 +244,12 @@ resolve_interval_colors <- function(values, panel_colors, cfg_colors) {
     default_color <- cfg_colors[["_default"]] %||% panel_colors[["_default"]] %||% "grey50"
 
     for (val in values) {
-        if (val %in% names(cfg_colors)) {
-            colors[val] <- cfg_colors[[val]]
-        } else if (val %in% names(panel_colors)) {
-            colors[val] <- panel_colors[[val]]
+        resolved <- lookup_color_value(val, cfg_colors)
+        if (is.null(resolved)) {
+            resolved <- lookup_color_value(val, panel_colors)
+        }
+        if (!is.null(resolved)) {
+            colors[val] <- resolved
         } else {
             colors[val] <- generate_color(val, default_color)
         }

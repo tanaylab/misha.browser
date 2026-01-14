@@ -13,6 +13,31 @@
     if (is.null(x) || length(x) == 0) y else x
 }
 
+#' Lookup a color allowing facet suffix fallbacks
+#'
+#' @param value Color key to resolve
+#' @param colors Named list/vector of colors
+#' @return Color string or NULL if not found
+#' @keywords internal
+lookup_color_value <- function(value, colors) {
+    if (is.null(colors) || length(colors) == 0) {
+        return(NULL)
+    }
+    if (!is.list(colors)) {
+        colors <- as.list(colors)
+    }
+    if (value %in% names(colors)) {
+        return(colors[[value]])
+    }
+    if (grepl("\\.k(4|27)$", value)) {
+        base <- sub("\\.k(4|27)$", "", value)
+        if (base %in% names(colors)) {
+            return(colors[[base]])
+        }
+    }
+    NULL
+}
+
 #' Check if value is NULL or NA
 #'
 #' @param x Value to check
