@@ -174,11 +174,21 @@ browser_server <- function(browser) {
             active_tracks(tracks)
         })
 
-        # Smooth window
-        shiny::observeEvent(input$smooth_window, {
-            br <- browser_rv()
-            br$state$smooth_window <- input$smooth_window
-            browser_rv(br)
+        # Smooth window (debounced to avoid excessive updates during typing)
+        smooth_window_debounced <- shiny::debounce(
+            shiny::reactive(input$smooth_window),
+            millis = 500
+        )
+
+        shiny::observe({
+            sw <- smooth_window_debounced()
+            if (!is.null(sw) && is.finite(sw)) {
+                br <- browser_rv()
+                if (!identical(br$state$smooth_window, sw)) {
+                    br$state$smooth_window <- sw
+                    browser_rv(br)
+                }
+            }
         })
 
         # Extraction mode help
@@ -321,6 +331,7 @@ browser_server <- function(browser) {
             br <- browser_rv()
             reg <- sanitize_interval(br$state$current_region)
 
+            # Validate inputs
             if (is.null(reg) || is.null(brush$xmin) || is.null(brush$xmax)) {
                 return()
             }
@@ -331,6 +342,13 @@ browser_server <- function(browser) {
             new_start <- brush$xmin
             new_end <- brush$xmax
 
+            # Ensure start < end (swap if needed)
+            if (new_start > new_end) {
+                tmp <- new_start
+                new_start <- new_end
+                new_end <- tmp
+            }
+
             # Handle normalized coordinates (0-1)
             if (new_start >= 0 && new_end <= 1) {
                 plot_start <- reg$start
@@ -339,13 +357,28 @@ browser_server <- function(browser) {
                 new_end <- plot_start + (plot_end - plot_start) * new_end
             }
 
+            # Validate bounds
+            if (new_start < 0) {
+                new_start <- 0
+            }
+
+            # Minimum region size (100bp)
+            min_region_size <- 100
+            if ((new_end - new_start) < min_region_size) {
+                mid <- (new_start + new_end) / 2
+                new_start <- mid - min_region_size / 2
+                new_end <- mid + min_region_size / 2
+            }
+
             if (input$brush_mode == "zoom") {
                 new_reg <- sanitize_interval(data.frame(
                     chrom = reg$chrom,
-                    start = new_start,
-                    end = new_end
+                    start = as.integer(new_start),
+                    end = as.integer(new_end)
                 ))
-                set_region(new_reg)
+                if (!is.null(new_reg)) {
+                    set_region(new_reg)
+                }
             } else {
                 # Highlight mode
                 br$state$highlight <- data.frame(start = new_start, end = new_end)

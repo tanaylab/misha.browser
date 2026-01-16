@@ -8,7 +8,9 @@
 #' @export
 browser_zoom_in <- function(browser, factor = 2) {
     region <- browser$state$current_region
-    if (is.null(region)) return(browser)
+    if (is.null(region)) {
+        return(browser)
+    }
 
     center <- interval_center(region)
     new_width <- max(100, interval_width(region) / factor)
@@ -27,7 +29,9 @@ browser_zoom_in <- function(browser, factor = 2) {
 #' @export
 browser_zoom_out <- function(browser, factor = 2) {
     region <- browser$state$current_region
-    if (is.null(region)) return(browser)
+    if (is.null(region)) {
+        return(browser)
+    }
 
     center <- interval_center(region)
     new_width <- interval_width(region) * factor
@@ -46,7 +50,9 @@ browser_zoom_out <- function(browser, factor = 2) {
 #' @export
 browser_move_left <- function(browser, fraction = 0.5) {
     region <- browser$state$current_region
-    if (is.null(region)) return(browser)
+    if (is.null(region)) {
+        return(browser)
+    }
 
     shift <- floor(interval_width(region) * fraction)
     browser$state$current_region <- make_region(
@@ -63,7 +69,9 @@ browser_move_left <- function(browser, fraction = 0.5) {
 #' @export
 browser_move_right <- function(browser, fraction = 0.5) {
     region <- browser$state$current_region
-    if (is.null(region)) return(browser)
+    if (is.null(region)) {
+        return(browser)
+    }
 
     shift <- floor(interval_width(region) * fraction)
     browser$state$current_region <- make_region(
@@ -80,8 +88,12 @@ browser_move_right <- function(browser, fraction = 0.5) {
 #' @keywords internal
 expand_interval <- function(interval, target_width) {
     interval <- sanitize_interval(interval)
-    if (is.null(interval)) return(NULL)
-    if (interval_width(interval) >= target_width) return(interval)
+    if (is.null(interval)) {
+        return(NULL)
+    }
+    if (interval_width(interval) >= target_width) {
+        return(interval)
+    }
 
     center <- interval_center(interval)
     make_region(interval$chrom, center - target_width / 2, center + target_width / 2)
@@ -95,10 +107,14 @@ expand_interval <- function(interval, target_width) {
 #' @keywords internal
 set_interval_width <- function(interval, target_width) {
     interval <- sanitize_interval(interval)
-    if (is.null(interval)) return(NULL)
+    if (is.null(interval)) {
+        return(NULL)
+    }
 
     target_width <- suppressWarnings(as.numeric(target_width))
-    if (!is.finite(target_width) || target_width <= 1) return(interval)
+    if (!is.finite(target_width) || target_width <= 1) {
+        return(interval)
+    }
 
     center <- interval_center(interval)
     make_region(interval$chrom, center - target_width / 2, center + target_width / 2)
@@ -113,10 +129,14 @@ set_interval_width <- function(interval, target_width) {
 #' @keywords internal
 browser_goto_gene <- function(browser, gene, span = NULL) {
     nav_regions <- load_navigator_regions(browser)
-    if (is.null(nav_regions)) return(browser)
+    if (is.null(nav_regions)) {
+        return(browser)
+    }
 
     label_field <- browser$cfg$navigator$label_field %||% "geneSymbol"
-    if (!label_field %in% names(nav_regions)) return(browser)
+    if (!label_field %in% names(nav_regions)) {
+        return(browser)
+    }
 
     gene_region <- nav_regions[nav_regions[[label_field]] == gene, ]
     if (nrow(gene_region) == 0) {

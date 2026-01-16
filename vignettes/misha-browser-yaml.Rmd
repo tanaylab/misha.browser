@@ -410,3 +410,103 @@ The file `inst/examples/silicus.yaml` combines all major features:
 - Vertical line overlays loaded from CSV/TSV files.
 
 Use it as a reference when building a full browser configuration.
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Misha root directory does not exist"
+
+This error occurs when the `misha_root` path in your configuration doesn't exist.
+
+**Solution**: Check the path in your YAML config under the active profile:
+
+```yaml
+profiles:
+  local:
+    misha_root: /path/to/misha  # Verify this path exists
+```
+
+Ensure the directory contains a valid misha trackdb (should have `.misha` marker files).
+
+#### "Failed to initialize misha database"
+
+The misha root exists but `gsetroot()` failed. This usually means the directory
+is not a valid misha database.
+
+**Solution**: Verify your misha root:
+
+```r
+misha::gsetroot("/your/misha/root")
+misha::gtrack.ls()  # Should list available tracks
+```
+
+#### Tracks not found / empty panels
+
+Your panel references tracks that don't exist in the misha database.
+
+**Solution**:
+1. Check track names match exactly (case-sensitive)
+2. Verify tracks exist: `misha::gtrack.exists("your.track.name")`
+3. For vtracks, ensure the source track (`src`) exists
+
+#### Plot appears blank or shows only axes
+
+This can happen when:
+- The viewing region has no data
+- All values are NA
+- The region is outside chromosome bounds
+
+**Solution**:
+1. Navigate to a different region or gene
+2. Check if the track has data: `misha::gextract("track.name", gintervals(1, 0, 1e6))`
+3. Verify chromosome names match (e.g., `chr1` vs `1`)
+
+#### Shiny app crashes on startup
+
+Common causes:
+- Invalid YAML syntax
+- Missing required fields
+- Profile not found
+
+**Solution**:
+1. Validate YAML syntax using an online validator
+2. Check for required fields: `misha_root`, at least one panel
+3. Ensure the profile name matches what's in `profiles:`
+
+#### Slow performance / memory issues
+
+**Solutions**:
+1. Increase iterator size for smoother data:
+   ```yaml
+   plot:
+     iterator: 64  # Default is 32
+   ```
+2. Use `dynamic` extraction mode for large regions:
+   ```yaml
+   plot:
+     extraction_mode: dynamic
+     target_points: 2000
+   ```
+3. Clear the cache periodically: `browser_clear_cache()`
+4. Reduce the number of tracks per panel
+
+#### Colors not applying correctly
+
+**Solution**: Check color mapping:
+- For `color_by: track`, colors should match track names
+- For `color_by: source`, colors should match extracted group names
+- Use `_default` for fallback:
+  ```yaml
+  colors:
+    known_value: "#E41A1C"
+    _default: grey50
+  ```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. Check the [GitHub issues](https://github.com/tanaylab/misha.browser/issues)
+2. Ensure you have the latest version: `remotes::install_github("tanaylab/misha.browser")`
+3. Try with a minimal configuration to isolate the problem

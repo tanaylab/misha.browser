@@ -92,6 +92,15 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     temp_vtracks <- track_specs$temp_vtracks
     timings$resolve <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
+    # Ensure cleanup happens even if an error occurs during extraction
+    on.exit(
+        {
+            reset_vtrack_iterators(modified_vtracks)
+            cleanup_temp_vtracks(temp_vtracks)
+        },
+        add = TRUE
+    )
+
     # Generate cache key (include mode to avoid cache conflicts)
     # For dynamic_smooth, include smoothing_bp in key
     smoothing_key <- if (extraction_mode == "dynamic_smooth") {
@@ -108,17 +117,16 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
         plot_type = panel$plot_type
     ))
 
-    # Build maps for vtrack transforms and their signatures
-    vtrack_transform_map <- setNames(
-        lapply(browser$cfg$vtracks %||% list(), function(vt) vt$transforms),
-        sapply(browser$cfg$vtracks %||% list(), function(vt) vt$name)
-    )
-    vtrack_sig_map <- setNames(
-        lapply(browser$cfg$vtracks %||% list(), function(vt) {
-            vt$._transform_signature %||% digest::digest(vt$transforms)
-        }),
-        sapply(browser$cfg$vtracks %||% list(), function(vt) vt$name)
-    )
+    # Build maps for vtrack transforms and their signatures (single pass)
+    vtracks_list <- browser$cfg$vtracks %||% list()
+    vtrack_transform_map <- list()
+    vtrack_sig_map <- list()
+    if (length(vtracks_list) > 0) {
+        for (vt in vtracks_list) {
+            vtrack_transform_map[[vt$name]] <- vt$transforms
+            vtrack_sig_map[[vt$name]] <- vt$._transform_signature %||% digest::digest(vt$transforms)
+        }
+    }
     vtrack_signatures <- vapply(track_names, function(name) {
         vtrack_sig_map[[name]] %||% ""
     }, character(1))
@@ -135,9 +143,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
 
     # Check cache
     if (use_cache && cache_exists(cache_k)) {
-        # Still need to clean up vtracks if we modified them
-        reset_vtrack_iterators(modified_vtracks)
-        cleanup_temp_vtracks(temp_vtracks)
+        # on.exit() handles cleanup
         if (profile) {
             cli::cli_text("      [cache hit]")
         }
@@ -154,9 +160,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     )
     timings$gextract <- as.numeric(difftime(Sys.time(), t1, units = "secs"))
 
-    # Clean up vtrack iterators and temp vtracks after extraction
-    reset_vtrack_iterators(modified_vtracks)
-    cleanup_temp_vtracks(temp_vtracks)
+    # Note: Cleanup is handled by on.exit() registered above
 
     if (is.null(data) || nrow(data) == 0) {
         return(NULL)
@@ -286,7 +290,7 @@ cleanup_temp_vtracks <- function(vtracks) {
     }
     for (vt in vtracks) {
         tryCatch(
-            misha::gvtrack.rm(vt, force = TRUE),
+            misha::gvtrack.rm(vt),
             error = function(e) NULL
         )
     }
@@ -314,6 +318,28 @@ extract_tracks <- function(tracks, region, iterator = 32, colnames = NULL) {
     # Default colnames to tracks
     if (is.null(colnames)) {
         colnames <- tracks
+    }
+
+    # Validate track existence before extraction
+    # Note: This catches non-existent tracks early with a helpful error message
+    # Skip validation for expressions (containing operators) and vtracks
+    for (i in seq_along(tracks)) {
+        track <- tracks[i]
+        # Skip if it looks like an expression (contains operators or parentheses)
+        if (grepl("[+\\-*/()\\s]", track)) {
+            next
+        }
+        # Check if track exists as a regular track or vtrack
+        if (!track_exists(track)) {
+            # Check if it's a known vtrack
+            vtrack_info <- tryCatch(misha::gvtrack.info(track), error = function(e) NULL)
+            if (is.null(vtrack_info)) {
+                cli::cli_warn(c(
+                    "Track not found: {track}",
+                    "i" = "Check that the track exists in the misha database or is defined as a vtrack"
+                ))
+            }
+        }
     }
 
     tryCatch(
@@ -563,7 +589,9 @@ extract_annotation_data <- function(panel, region) {
 #' @keywords internal
 load_navigator_regions <- function(browser) {
     nav <- browser$cfg$navigator
-    if (is.null(nav$source)) return(NULL)
+    if (is.null(nav$source)) {
+        return(NULL)
+    }
 
     with_cache(cache_key("navigator", nav$source, nav$label_field), function() {
         tryCatch(
@@ -674,10 +702,22 @@ extract_panels_parallel <- function(browser, panels, region, use_cache = TRUE) {
     profile <- getOption("misha.browser.profile", FALSE)
     t0 <- Sys.time()
 
+    # Get misha root to pass to workers (workers don't inherit gsetroot state)
+    misha_root <- browser$cfg$._misha_root
+
     # Launch futures for each panel's data extraction
     data_futures <- lapply(data_panels, function(panel) {
         future::future(
             {
+                # Set misha root in worker (workers don't inherit parent's gsetroot)
+                if (!is.null(misha_root) && nzchar(misha_root)) {
+                    tryCatch(
+                        misha::gsetroot(misha_root),
+                        error = function(e) {
+                            cli::cli_warn("Worker failed to set misha root: {e$message}")
+                        }
+                    )
+                }
                 extract_panel_data(browser, panel, region, use_cache)
             },
             seed = TRUE

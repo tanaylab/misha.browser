@@ -22,12 +22,13 @@ An interactive genome browser for [misha](https://github.com/tanaylab/misha) gen
 - **YAML Configuration**: Define your entire browser setup in a single YAML file
 - **Virtual Tracks**: Full support for misha virtual tracks with expressions, aggregation functions, and filters
 - **Track Expressions**: Arithmetic operations on tracks (e.g., `"track1 / track2"`)
-- **Multiple Panel Types**: Data panels, gene annotations, and ideograms
+- **Multiple Panel Types**: Data panels, gene annotations, intervals, and ideograms
 - **Data Transforms**: Smooth, log2, log10, zscore, clip, quantile normalization, and custom expressions
+- **Horizontal/Vertical Lines**: Add reference lines (fixed values or computed statistics) and region markers
 - **Faceting & Grouping**: Group tracks by metadata with regex pattern matching
-- **Vertical Line Annotations**: Mark regions from files, misha intervals, or inline coordinates
 - **Interactive Shiny App**: Navigate, zoom, highlight, and explore your data
-- **Caching**: Efficient data extraction with automatic caching
+- **File Uploads**: Upload intervals and PSSM files directly in the Shiny app
+- **Caching**: Efficient data extraction with automatic memory and disk caching
 
 ## Installation
 
@@ -43,16 +44,16 @@ library(misha.browser)
 
 # 1) Create a browser rooted at the mm10 misha database
 browser <- browser_create(misha_root = "/net/mraid20/export/data4/db/tgdb/mm10/trackdb/") %>%
-  browser_add_panel(
-    name = "signal",
-    tracks = c("jk.epipcg.pcg.CRJK_0364_k27me3_eb_j1_d4_a", "jk.epipcg.pcg.CRJK_0411_k4me3_wt_to_wt_eb_d3"),
-    plot_type = "line",
-    height = 3
-  ) %>%
-  browser_add_panel(
-    name = "genes",
-    type = "annotation"
-  )
+    browser_add_panel(
+        name = "signal",
+        tracks = c("jk.epipcg.pcg.CRJK_0364_k27me3_eb_j1_d4_a", "jk.epipcg.pcg.CRJK_0411_k4me3_wt_to_wt_eb_d3"),
+        plot_type = "line",
+        height = 3
+    ) %>%
+    browser_add_panel(
+        name = "genes",
+        type = "annotation"
+    )
 
 # 2) Save a YAML config for deployment
 browser_save_config(browser$cfg, "config.yaml")
@@ -60,11 +61,11 @@ browser_save_config(browser$cfg, "config.yaml")
 # 3a) Deploy to a local Shiny Server app directory
 #     (creates the destination directory if needed)
 browser_deploy_local(
-  dest_dir = "/net/mraid20/export/tgdata/db/tgdb/tanaywiz/apps/my_user/app",
-  config = "config.yaml",
-  profile = "server",
-  overwrite = TRUE,
-  touch_restart = TRUE
+    dest_dir = "/net/mraid20/export/tgdata/db/tgdb/tanaywiz/apps/my_user/app",
+    config = "config.yaml",
+    profile = "server",
+    overwrite = TRUE,
+    touch_restart = TRUE
 )
 
 # 3b) Or run locally (Shiny)
@@ -274,6 +275,41 @@ panels:
     height: 1
 ```
 
+#### Intervals Panels
+
+Display genomic intervals from misha interval sets or files:
+
+```yaml
+panels:
+  - name: repeats
+    type: intervals
+    intervals: intervs.global.rmsk
+    color_by: class
+    filter_field: class
+    filter_values: [LINE, LTR]
+    colors:
+      LINE: "#E41A1C"
+      LTR: "#377EB8"
+    outline_color: grey20
+    label_field: name
+    show_labels: true
+    height: 1.5
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `intervals` | Misha intervals name (e.g., `intervs.global.rmsk`) |
+| `source` | Alternative: `file` to load from a file |
+| `file` | Path to BED/TSV file (when `source: file`) |
+| `color_by` | Column to map to fill color |
+| `colors` | Named color mapping |
+| `outline_color` | Border color for rectangles |
+| `filter_field` | Column to filter on |
+| `filter_values` | Values to include (list) |
+| `filter_regex` | Regex pattern to match |
+| `label_field` | Column for text labels |
+| `show_labels` | Whether to display labels |
+
 #### Ideogram Panels
 
 ```yaml
@@ -284,6 +320,46 @@ panels:
     highlight_current: true
     height: 0.3
 ```
+
+### Horizontal Lines (hlines)
+
+Add reference lines to data panels:
+
+```yaml
+panels:
+  - name: signal
+    type: data
+    tracks: [chip.k27me3]
+    hlines:
+      # Fixed y-value
+      - y: 6
+        color: black
+        linetype: solid
+        linewidth: 0.5
+        label: "Threshold"
+      # Computed from data statistics
+      - stat: mean
+        color: blue
+        linetype: dashed
+        label: "Mean"
+      - stat: median
+        color: green
+        linetype: dotted
+      - stat: quantile
+        q: 0.95
+        color: red
+        label: "95th percentile"
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `y` | Fixed y-position for the line |
+| `stat` | Compute from data: `mean`, `median`, or `quantile` |
+| `q` | Quantile value (when `stat: quantile`) |
+| `color` | Line color |
+| `linetype` | Line type: `solid`, `dashed`, `dotted`, etc. |
+| `linewidth` | Line width |
+| `label` | Optional text label (placed at right edge) |
 
 ### Data Transforms
 
@@ -296,8 +372,8 @@ Available transform types:
 | `log10` | `offset` | Log10 transformation with offset |
 | `sqrt` | - | Square root transformation |
 | `zscore` | - | Z-score normalization |
-| `minmax` | `min`, `max` | Min-max scaling |
-| `clip` | `lower`, `upper` | Clip values to range |
+| `minmax` | - | Min-max scaling to 0..1 |
+| `clip` | `min`, `max` | Clip values to range |
 | `quantile` | `probs` | Quantile normalization |
 | `expr` | `expr` | Custom R expression |
 
@@ -310,8 +386,8 @@ transforms:
   - type: log2
     offset: 1
   - type: clip
-    lower: 0
-    upper: 10
+    min: 0
+    max: 10
   - type: expr
     expr: "pmax(x, 0)"  # Custom expression (x = values)
 ```
@@ -419,8 +495,8 @@ browser_add_vlines(browser, name, source, file = NULL, intervals = NULL, ...)
 ### Interactive App
 
 ```{r, eval=FALSE}
-browser_run(browser, port = 3838, host = "0.0.0.0", launch.browser = TRUE)
-browser_launch(config, port = 3838, host = "0.0.0.0", profile = NULL)
+browser_run(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE)
+browser_launch(config, port = 8911, host = "0.0.0.0", profile = NULL)
 ```
 
 ### Local Deployment Helper
@@ -522,6 +598,35 @@ The interactive Shiny application provides:
 - **Span Control**: Quick span presets
 - **Vertical Line Toggles**: Enable/disable vertical line layers
 - **Cache Management**: Clear cache when needed
+- **Configuration Editor**: Edit vtracks and panels in real-time
+- **File Uploads**: Upload intervals and PSSM files for use in vtracks
+
+### Uploading Files
+
+The Shiny app allows uploading intervals and PSSM files through the configuration editor:
+
+#### Intervals Files
+
+Upload BED or TSV files containing genomic intervals for use in vtracks with distance or coverage functions:
+
+- **BED format**: Tab-separated, no header (columns: chrom, start, end, ...)
+- **TSV format**: Tab/comma-separated with header (requires `chrom`, `start`, `end` columns)
+
+Uploaded intervals appear in dropdowns prefixed with `@uploaded:` and can be used as:
+- Filter sources for vtracks
+- Source for intervals-based vtrack functions (`distance`, `coverage`, `neighbor.count`)
+
+#### PSSM Files
+
+Upload Position-Specific Scoring Matrices for PWM-based vtracks:
+
+- **TSV format**: Tab/comma-separated with A, C, G, T columns
+- **MEME format**: Standard MEME motif format
+- **JASPAR format**: JASPAR matrix format
+
+The app also integrates with the `prego` package for access to pre-built motif databases.
+
+Uploaded PSSMs can be used with vtrack functions: `pwm`, `pwm.max`, `pwm.max.pos`, `pwm.count`
 
 ## Requirements
 

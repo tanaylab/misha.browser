@@ -15,6 +15,7 @@ transform_zscore(x, params)
 Z-score normalized vector
 }
 \description{
-Z-score normalization
+Standardizes values to have mean 0 and standard deviation 1.
+If all values are NA or standard deviation is zero, returns zeros.
 }
 \keyword{internal}

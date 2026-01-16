@@ -147,16 +147,30 @@ transform_sqrt <- function(x, params) {
 
 #' Z-score normalization
 #'
+#' Standardizes values to have mean 0 and standard deviation 1.
+#' If all values are NA or standard deviation is zero, returns zeros.
+#'
 #' @param x Numeric vector
 #' @param params List (unused)
 #' @return Z-score normalized vector
 #' @keywords internal
 transform_zscore <- function(x, params) {
+    # Handle all-NA input
+    if (all(is.na(x))) {
+        return(x)
+    }
+
     m <- mean(x, na.rm = TRUE)
     s <- stats::sd(x, na.rm = TRUE)
-    if (is.na(s) || s == 0) {
-        return(x - m)
+
+    # Handle zero or NA standard deviation (constant values)
+    if (is.na(s) || s < .Machine$double.eps) {
+        # Return zeros for constant data (all values equal to mean)
+        result <- rep(0, length(x))
+        result[is.na(x)] <- NA
+        return(result)
     }
+
     (x - m) / s
 }
 

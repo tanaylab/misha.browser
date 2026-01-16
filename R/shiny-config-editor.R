@@ -827,9 +827,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Delete vtrack observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_vt_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             vtracks <- draft_vtracks()
-            lapply(seq_along(vtracks), function(i) {
+
+            # Destroy old observers
+            old_obs <- delete_vt_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(vtracks), function(i) {
                 shiny::observeEvent(input[[paste0("delete_vt_", i)]],
                     {
                         current <- draft_vtracks()
@@ -837,16 +848,27 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             draft_vtracks(current[-i])
                         }
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_vt_observers(new_obs)
         })
 
         # Function change observers - update vtrack to trigger UI refresh
+        # Track observer handles to prevent memory leaks
+        func_change_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             vtracks <- draft_vtracks()
-            lapply(seq_along(vtracks), function(i) {
+
+            # Destroy old observers
+            old_obs <- func_change_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(vtracks), function(i) {
                 shiny::observeEvent(input[[paste0("vt_func_", i)]],
                     {
                         new_func <- input[[paste0("vt_func_", i)]]
@@ -872,12 +894,24 @@ config_editor_server <- function(id, browser_rv, original_config) {
                     ignoreInit = TRUE
                 )
             })
+            func_change_observers(new_obs)
         })
 
         # Add vtrack transform
+        # Track observer handles to prevent memory leaks
+        add_vt_tr_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             vtracks <- draft_vtracks()
-            lapply(seq_along(vtracks), function(i) {
+
+            # Destroy old observers
+            old_obs <- add_vt_tr_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(vtracks), function(i) {
                 shiny::observeEvent(input[[paste0("add_vt_tr_", i)]],
                     {
                         current <- draft_vtracks()
@@ -888,38 +922,54 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             draft_vtracks(current)
                         }
                     },
-                    ignoreInit = TRUE,
-                    once = FALSE
+                    ignoreInit = TRUE
                 )
             })
+            add_vt_tr_observers(new_obs)
         })
 
         # Delete vtrack transform
+        # Track observer handles to prevent memory leaks
+        delete_vt_tr_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             vtracks <- draft_vtracks()
-            lapply(seq_along(vtracks), function(i) {
+
+            # Destroy old observers
+            old_obs <- delete_vt_tr_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers (nested: for each vtrack, for each transform)
+            new_obs <- list()
+            for (i in seq_along(vtracks)) {
                 vt <- vtracks[[i]]
                 transforms <- vt$transforms %||% list()
-                lapply(seq_along(transforms), function(j) {
-                    shiny::observeEvent(input[[paste0("delete_vt_tr_", i, "_", j)]],
+                for (j in seq_along(transforms)) {
+                    obs <- shiny::observeEvent(input[[paste0("delete_vt_tr_", i, "_", j)]],
                         {
+                            # Capture i and j in closure
+                            local_i <- i
+                            local_j <- j
                             current <- draft_vtracks()
-                            if (i <= length(current)) {
-                                cur_vt <- current[[i]]
+                            if (local_i <= length(current)) {
+                                cur_vt <- current[[local_i]]
                                 cur_transforms <- cur_vt$transforms %||% list()
-                                if (j <= length(cur_transforms)) {
-                                    cur_transforms <- cur_transforms[-j]
+                                if (local_j <= length(cur_transforms)) {
+                                    cur_transforms <- cur_transforms[-local_j]
                                     cur_vt$transforms <- cur_transforms
-                                    current[[i]] <- cur_vt
+                                    current[[local_i]] <- cur_vt
                                     draft_vtracks(current)
                                 }
                             }
                         },
-                        ignoreInit = TRUE,
-                        once = TRUE
+                        ignoreInit = TRUE
                     )
-                })
-            })
+                    new_obs <- c(new_obs, list(obs))
+                }
+            }
+            delete_vt_tr_observers(new_obs)
         })
 
         # ==================== PANEL CRUD ====================
@@ -975,9 +1025,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Delete panel observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_pnl_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             panels <- draft_panels()
-            lapply(seq_along(panels), function(i) {
+
+            # Destroy old observers
+            old_obs <- delete_pnl_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(panels), function(i) {
                 shiny::observeEvent(input[[paste0("delete_pnl_", i)]],
                     {
                         current <- draft_panels()
@@ -985,10 +1046,10 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             draft_panels(current[-i])
                         }
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_pnl_observers(new_obs)
         })
 
         # ==================== COLORS CRUD ====================
@@ -1047,9 +1108,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Delete color observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_color_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             colors <- draft_colors()
-            lapply(seq_along(colors), function(i) {
+
+            # Destroy old observers
+            old_obs <- delete_color_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(colors), function(i) {
                 shiny::observeEvent(input[[paste0("delete_color_", i)]],
                     {
                         current <- draft_colors()
@@ -1058,10 +1130,10 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             draft_colors(current)
                         }
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_color_observers(new_obs)
         })
 
         # ==================== VLINES CRUD ====================
@@ -1174,9 +1246,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Delete vline observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_vl_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             vlines <- draft_vlines()
-            lapply(seq_along(vlines), function(i) {
+
+            # Destroy old observers
+            old_obs <- delete_vl_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(vlines), function(i) {
                 shiny::observeEvent(input[[paste0("delete_vl_", i)]],
                     {
                         current <- draft_vlines()
@@ -1184,10 +1267,10 @@ config_editor_server <- function(id, browser_rv, original_config) {
                             draft_vlines(current[-i])
                         }
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_vl_observers(new_obs)
         })
 
         # ==================== UPLOADS CRUD ====================
@@ -1585,9 +1668,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Delete intervals observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_intervals_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             intervals <- uploaded_intervals()
-            lapply(names(intervals), function(name) {
+
+            # Destroy old observers
+            old_obs <- delete_intervals_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(names(intervals), function(name) {
                 shiny::observeEvent(input[[paste0("delete_intervals_", name)]],
                     {
                         current <- uploaded_intervals()
@@ -1595,16 +1689,27 @@ config_editor_server <- function(id, browser_rv, original_config) {
                         uploaded_intervals(current)
                         delete_uploaded_intervals(name)
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_intervals_observers(new_obs)
         })
 
         # Delete PSSM observers (dynamic)
+        # Track observer handles to prevent memory leaks
+        delete_pssm_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             pssms <- uploaded_pssms()
-            lapply(names(pssms), function(name) {
+
+            # Destroy old observers
+            old_obs <- delete_pssm_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(names(pssms), function(name) {
                 shiny::observeEvent(input[[paste0("delete_pssm_", name)]],
                     {
                         current <- uploaded_pssms()
@@ -1612,10 +1717,10 @@ config_editor_server <- function(id, browser_rv, original_config) {
                         uploaded_pssms(current)
                         delete_uploaded_pssm(name)
                     },
-                    ignoreInit = TRUE,
-                    once = TRUE
+                    ignoreInit = TRUE
                 )
             })
+            delete_pssm_observers(new_obs)
         })
 
         # ==================== PANEL HLINES ====================
@@ -1742,9 +1847,20 @@ config_editor_server <- function(id, browser_rv, original_config) {
         })
 
         # Add hline to panel
+        # Track observer handles to prevent memory leaks
+        add_hline_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             panels <- draft_panels()
-            lapply(seq_along(panels), function(panel_idx) {
+
+            # Destroy old observers
+            old_obs <- add_hline_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers
+            new_obs <- lapply(seq_along(panels), function(panel_idx) {
                 shiny::observeEvent(input[[paste0("add_hline_", panel_idx)]],
                     {
                         new_hline <- list(
@@ -1763,31 +1879,48 @@ config_editor_server <- function(id, browser_rv, original_config) {
                     ignoreInit = TRUE
                 )
             })
+            add_hline_observers(new_obs)
         })
 
         # Delete hline observers
+        # Track observer handles to prevent memory leaks
+        delete_hline_observers <- shiny::reactiveVal(list())
+
         shiny::observe({
             panels <- draft_panels()
-            lapply(seq_along(panels), function(panel_idx) {
+
+            # Destroy old observers
+            old_obs <- delete_hline_observers()
+            for (obs in old_obs) {
+                obs$destroy()
+            }
+
+            # Create new observers (nested: for each panel, for each hline)
+            new_obs <- list()
+            for (panel_idx in seq_along(panels)) {
                 panel <- panels[[panel_idx]]
                 hlines <- panel$hlines %||% list()
-                lapply(seq_along(hlines), function(hline_idx) {
-                    shiny::observeEvent(input[[paste0("delete_hline_", panel_idx, "_", hline_idx)]],
+                for (hline_idx in seq_along(hlines)) {
+                    obs <- shiny::observeEvent(input[[paste0("delete_hline_", panel_idx, "_", hline_idx)]],
                         {
+                            # Capture indices in closure
+                            local_panel_idx <- panel_idx
+                            local_hline_idx <- hline_idx
                             current_panels <- draft_panels()
-                            if (panel_idx <= length(current_panels)) {
-                                current_hlines <- current_panels[[panel_idx]]$hlines %||% list()
-                                if (hline_idx <= length(current_hlines)) {
-                                    current_panels[[panel_idx]]$hlines <- current_hlines[-hline_idx]
+                            if (local_panel_idx <= length(current_panels)) {
+                                current_hlines <- current_panels[[local_panel_idx]]$hlines %||% list()
+                                if (local_hline_idx <= length(current_hlines)) {
+                                    current_panels[[local_panel_idx]]$hlines <- current_hlines[-local_hline_idx]
                                     draft_panels(current_panels)
                                 }
                             }
                         },
-                        ignoreInit = TRUE,
-                        once = TRUE
+                        ignoreInit = TRUE
                     )
-                })
-            })
+                    new_obs <- c(new_obs, list(obs))
+                }
+            }
+            delete_hline_observers(new_obs)
         })
 
         # ==================== VALIDATION ====================
@@ -1836,7 +1969,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             # Remove old vtracks
             for (vt in old_vtracks) {
                 tryCatch(
-                    misha::gvtrack.rm(vt$name, force = TRUE),
+                    misha::gvtrack.rm(vt$name),
                     error = function(e) NULL
                 )
             }
@@ -2561,24 +2694,5 @@ expand_colors_with_tracks <- function(colors, panels) {
     base_colors
 }
 
-#' Clean configuration for YAML export
-#' @keywords internal
-clean_config_for_export <- function(cfg) {
-    # Remove internal fields that start with .
-    remove_internal <- function(x) {
-        if (is.list(x)) {
-            # Remove fields starting with .
-            to_remove <- grep("^\\.", names(x), value = TRUE)
-            for (field in to_remove) {
-                x[[field]] <- NULL
-            }
-            # Recurse
-            for (name in names(x)) {
-                x[[name]] <- remove_internal(x[[name]])
-            }
-        }
-        x
-    }
-
-    remove_internal(cfg)
-}
+# Note: clean_config_for_export() is now defined in config.R to resolve
+# dependency issues when config.R is used standalone.

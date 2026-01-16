@@ -2,13 +2,45 @@
 
 #' Load browser configuration from YAML file
 #'
+#' Loads and validates a YAML configuration file for the genome browser.
+#' The configuration can contain multiple profiles (e.g., "local" and "server")
+#' with different misha database paths and settings. If no profile is specified,
+#' the function auto-detects based on which paths exist.
+#'
 #' @param file Path to YAML configuration file
-#' @param profile Profile name to use (default: auto-detect)
-#' @return Parsed and validated configuration list
+#' @param profile Profile name to use (default: auto-detect based on available paths).
+#'   Common profiles are "local" and "server".
+#' @return Parsed and validated configuration list with resolved paths and defaults.
+#'   Internal fields (prefixed with `._`) contain resolved paths and metadata.
+#'
+#' @details
+#' The configuration file should contain:
+#' \itemize{
+#'   \item \code{profiles}: Environment-specific settings (misha_root, base_dir, data_dir)
+#'   \item \code{panels}: Panel definitions for data visualization
+#'   \item \code{vtracks}: Virtual track definitions
+#'   \item \code{vlines}: Vertical line annotations
+#'   \item \code{plot}: Plot settings (iterator, extraction_mode, theme)
+#'   \item \code{ui}: User interface settings (title, defaults)
+#'   \item \code{navigator}: Gene navigator configuration
+#'   \item \code{start}: Initial region settings
+#' }
+#'
+#' @seealso \code{\link{browser_save_config}} to save configuration,
+#'   \code{\link{browser_create_config}} to create configuration programmatically,
+#'   \code{\link{browser_create}} to create a browser from configuration
+#'
 #' @export
 #' @examples
 #' \dontrun{
+#' # Load with auto-detected profile
 #' cfg <- browser_load_config("my_browser.yaml")
+#'
+#' # Load with specific profile
+#' cfg <- browser_load_config("my_browser.yaml", profile = "server")
+#'
+#' # Use loaded config to create browser
+#' browser <- browser_create(config = "my_browser.yaml")
 #' }
 browser_load_config <- function(file, profile = NULL) {
     if (!file.exists(file)) {
@@ -68,6 +100,16 @@ resolve_profile <- function(cfg, profile = NULL, config_dir = ".") {
                     vl$._resolved_file <- resolve_path(data_dir, vl$file)
                 }
                 vl
+            })
+        }
+
+        # Resolve file paths in panels (e.g., intervals panels with file source)
+        if (!is.null(cfg$panels)) {
+            cfg$panels <- lapply(cfg$panels, function(panel) {
+                if (!is.null(panel$file)) {
+                    panel$._resolved_file <- resolve_path(data_dir, panel$file)
+                }
+                panel
             })
         }
     }
@@ -407,9 +449,39 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
 
 #' Save configuration to YAML file
 #'
-#' @param cfg Configuration list
-#' @param file Output file path
+#' Saves the browser configuration to a YAML file. Internal fields (those
+#' starting with `._`) are automatically removed before saving, so the
+#' resulting file is clean and portable.
+#'
+#' @param cfg Configuration list (typically from a browser object via `browser$cfg`)
+#' @param file Output file path (should end with .yaml or .yml)
+#' @return Invisibly returns the original configuration (for piping)
+#'
+#' @details
+#' The saved configuration can be loaded later with \code{\link{browser_load_config}}
+#' or used directly with \code{\link{browser_create}}.
+#'
+#' Internal fields that are removed include:
+#' \itemize{
+#'   \item \code{._config_file}: Original config file path
+#'   \item \code{._misha_root}: Resolved misha database path
+#'   \item \code{._profile}: Active profile name
+#'   \item \code{._cache_signature}: Pre-computed cache signatures
+#' }
+#'
+#' @seealso \code{\link{browser_load_config}} to load configuration,
+#'   \code{\link{browser_create_config}} to create configuration programmatically
+#'
 #' @export
+#' @examples
+#' \dontrun{
+#' # Save browser configuration
+#' browser_save_config(browser$cfg, "my_browser.yaml")
+#'
+#' # Modify and save
+#' browser <- browser_add_panel(browser, name = "new_panel", tracks = "my_track")
+#' browser_save_config(browser$cfg, "updated_config.yaml")
+#' }
 browser_save_config <- function(cfg, file) {
     # Remove internal fields before saving
     cfg_clean <- clean_config_for_export(cfg)
@@ -417,6 +489,34 @@ browser_save_config <- function(cfg, file) {
     yaml::write_yaml(cfg_clean, file)
     cli::cli_alert_success("Configuration saved to {file}")
     invisible(cfg)
+}
+
+#' Clean configuration for YAML export
+#'
+#' Removes internal fields (those starting with .) from the configuration
+#' before saving to YAML.
+#'
+#' @param cfg Configuration list
+#' @return Cleaned configuration list
+#' @keywords internal
+clean_config_for_export <- function(cfg) {
+    # Remove internal fields that start with .
+    remove_internal <- function(x) {
+        if (is.list(x)) {
+            # Remove fields starting with .
+            to_remove <- grep("^\\.", names(x), value = TRUE)
+            for (field in to_remove) {
+                x[[field]] <- NULL
+            }
+            # Recurse
+            for (name in names(x)) {
+                x[[name]] <- remove_internal(x[[name]])
+            }
+        }
+        x
+    }
+
+    remove_internal(cfg)
 }
 
 #' Get panel by name

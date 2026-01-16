@@ -48,8 +48,24 @@ browser_create <- function(config = NULL, misha_root = NULL, title = "Genome Bro
 
     # Set misha root if available
     t_root <- Sys.time()
-    if (!is.null(cfg$._misha_root) && dir.exists(cfg$._misha_root)) {
-        misha::gsetroot(cfg$._misha_root)
+    if (!is.null(cfg$._misha_root)) {
+        if (!dir.exists(cfg$._misha_root)) {
+            cli::cli_abort(c(
+                "Misha root directory does not exist",
+                "x" = "Path: {cfg$._misha_root}",
+                "i" = "Check the 'misha_root' setting in your configuration profile"
+            ))
+        }
+        tryCatch(
+            misha::gsetroot(cfg$._misha_root),
+            error = function(e) {
+                cli::cli_abort(c(
+                    "Failed to initialize misha database",
+                    "x" = e$message,
+                    "i" = "Path: {cfg$._misha_root}"
+                ))
+            }
+        )
     }
     timings$set_root <- as.numeric(difftime(Sys.time(), t_root, units = "secs"))
 
@@ -91,17 +107,29 @@ init_vtracks <- function(browser) {
         return(browser)
     }
 
-    for (vt in vtracks) {
+    # Pre-allocate vector for new vtrack names to avoid O(n^2) concatenation
+    new_vtrack_names <- character(length(vtracks))
+    successfully_created <- 0
+
+    for (i in seq_along(vtracks)) {
+        vt <- vtracks[[i]]
+
+        # Expression vtracks: store expression for extraction but don't create misha vtrack
+        if (vt$vtype == "expr") {
+            # Store the raw expression for use during extraction
+            browser$state$vtrack_expressions[[vt$name]] <- vt$expr
+            # Don't add to misha_vtrack_names since this isn't a real misha vtrack
+            next
+        }
+
         tryCatch(
             {
                 create_vtrack(vt, browser$cfg)
                 # Store the expression (defaults to name, but can be wrapped)
                 browser$state$vtrack_expressions[[vt$name]] <- vt$expression
-                # Add to cached vtrack names
-                browser$state$misha_vtrack_names <- unique(c(
-                    browser$state$misha_vtrack_names,
-                    vt$name
-                ))
+                # Track successful creation
+                successfully_created <- successfully_created + 1
+                new_vtrack_names[successfully_created] <- vt$name
             },
             error = function(e) {
                 if (!grepl("exists", e$message, ignore.case = TRUE)) {
@@ -109,6 +137,14 @@ init_vtracks <- function(browser) {
                 }
             }
         )
+    }
+
+    # Add all new vtrack names at once (efficient single concatenation)
+    if (successfully_created > 0) {
+        browser$state$misha_vtrack_names <- unique(c(
+            browser$state$misha_vtrack_names,
+            new_vtrack_names[seq_len(successfully_created)]
+        ))
     }
 
     browser

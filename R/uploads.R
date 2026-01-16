@@ -289,7 +289,8 @@ parse_pssm_file <- function(file_path, format = "auto") {
         stop("Unknown PSSM format: ", format)
     )
 
-    validate_pssm(pssm)
+    # Validate and normalize (returns the normalized matrix)
+    pssm <- validate_pssm(pssm)
     pssm
 }
 
@@ -436,7 +437,9 @@ parse_jaspar_pssm <- function(file_path) {
     pssm
 }
 
-#' Validate PSSM matrix
+#' Validate and normalize PSSM matrix
+#' @param pssm Matrix to validate
+#' @return Validated (and possibly normalized) PSSM matrix
 #' @noRd
 validate_pssm <- function(pssm) {
     if (!is.matrix(pssm)) {
@@ -474,11 +477,11 @@ validate_pssm <- function(pssm) {
     # If values are counts or log-odds, that's also fine
     # Just warn if rows don't sum to 1 and values aren't clearly log-odds
     if (any(row_sums > 1.1) && all(pssm >= 0) && max(pssm) < 100) {
-        # Likely counts, normalize
+        # Likely counts, normalize to probabilities
         pssm <- pssm / rowSums(pssm)
     }
 
-    invisible(TRUE)
+    pssm
 }
 
 # =============================================================================

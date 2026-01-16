@@ -51,7 +51,9 @@ load_vline_intervals <- function(vline, region, data_dir = ".") {
 #' @keywords internal
 load_vline_file <- function(vline, data_dir = ".") {
     file_path <- vline$._resolved_file %||% resolve_path(data_dir, vline$file)
-    if (is.null(file_path) || !file.exists(file_path)) return(NULL)
+    if (is.null(file_path) || !file.exists(file_path)) {
+        return(NULL)
+    }
 
     with_cache(cache_key("vline_file", file_path), function() {
         tryCatch(
@@ -91,7 +93,9 @@ load_vline_file <- function(vline, data_dir = ".") {
 #' @keywords internal
 load_vline_misha <- function(vline) {
     intervals_name <- vline$intervals
-    if (is.null(intervals_name)) return(NULL)
+    if (is.null(intervals_name)) {
+        return(NULL)
+    }
 
     with_cache(cache_key("vline_misha", intervals_name), function() {
         tryCatch(

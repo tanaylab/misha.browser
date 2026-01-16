@@ -321,14 +321,42 @@ get_track_choices <- function(browser) {
     all_tracks <- character(0)
     for (panel in browser$cfg$panels) {
         if (panel$type == "data" && !is.null(panel$tracks)) {
-            all_tracks <- c(all_tracks, unlist(panel$tracks))
+            all_tracks <- c(all_tracks, extract_track_names(panel$tracks))
         }
     }
     ui_defaults <- browser$cfg$ui$default_tracks
     if (!is.null(ui_defaults)) {
-        all_tracks <- c(all_tracks, as.character(unlist(ui_defaults, use.names = FALSE)))
+        all_tracks <- c(all_tracks, extract_track_names(ui_defaults))
     }
     unique(all_tracks)
+}
+
+#' Extract track names from a tracks list
+#'
+#' Handles both string tracks and list-based track specs (with expr/name fields).
+#' Only includes character tracks and list entries with explicit 'name' field.
+#'
+#' @param tracks List or vector of track specifications
+#' @return Character vector of track names
+#' @keywords internal
+extract_track_names <- function(tracks) {
+    if (is.null(tracks) || length(tracks) == 0) {
+        return(character(0))
+    }
+
+    track_names <- character(0)
+    for (track in tracks) {
+        if (is.character(track)) {
+            # Simple string track name
+            track_names <- c(track_names, track)
+        } else if (is.list(track) && !is.null(track$name)) {
+            # List with explicit name field
+            track_names <- c(track_names, track$name)
+        }
+        # Skip inline expressions without explicit name
+    }
+
+    track_names[nzchar(track_names)]
 }
 
 #' Get default selected tracks
@@ -339,8 +367,7 @@ get_track_choices <- function(browser) {
 get_default_tracks <- function(browser) {
     defaults <- browser$cfg$ui$default_tracks
     if (!is.null(defaults)) {
-        defaults <- as.character(unlist(defaults, use.names = FALSE))
-        defaults <- defaults[nzchar(defaults)]
+        defaults <- extract_track_names(defaults)
         if (length(defaults) > 0) {
             choices <- get_track_choices(browser)
             defaults <- defaults[defaults %in% choices]
@@ -352,7 +379,7 @@ get_default_tracks <- function(browser) {
     # Return tracks from first data panel as defaults
     for (panel in browser$cfg$panels) {
         if (panel$type == "data" && !is.null(panel$tracks)) {
-            return(unlist(panel$tracks))
+            return(extract_track_names(panel$tracks))
         }
     }
     character(0)

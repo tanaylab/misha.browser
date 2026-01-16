@@ -155,15 +155,15 @@ cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries
         return(invisible(0L))
     }
 
-    # Get access times for all keys
-    access_times <- sapply(keys, function(k) {
-        if (exists(k, envir = .browser_cache_meta)) {
-            get(k, envir = .browser_cache_meta)
-        } else {
-            # Never accessed - oldest possible
-            as.POSIXct("1970-01-01")
-        }
-    })
+    # Get access times for all keys using mget (more efficient than sapply + get)
+    default_time <- as.POSIXct("1970-01-01")
+    access_times_list <- mget(keys,
+        envir = .browser_cache_meta,
+        ifnotfound = list(default_time)
+    )
+    access_times <- vapply(access_times_list, function(t) {
+        if (inherits(t, "POSIXct")) as.numeric(t) else as.numeric(default_time)
+    }, numeric(1))
 
     # Sort by access time (oldest first)
     sorted_keys <- keys[order(access_times)]
@@ -171,19 +171,23 @@ cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries
     # Calculate how many to remove
     n_to_remove <- n_entries - max_entries
 
-    # Also check byte size
+    # Also check byte size - calculate sizes once, not twice
     if (!is.null(max_bytes)) {
-        total_bytes <- sum(sapply(keys, function(k) {
-            object.size(get(k, envir = .browser_cache))
-        }))
+        # Calculate sizes incrementally (more memory efficient for large caches)
+        sizes <- numeric(length(sorted_keys))
+        for (i in seq_along(sorted_keys)) {
+            sizes[i] <- as.numeric(object.size(get(sorted_keys[i], envir = .browser_cache)))
+        }
+        total_bytes <- sum(sizes)
 
         if (total_bytes > max_bytes) {
             # Need to remove more - remove oldest until under limit
-            cumulative_size <- 0
+            cumulative_size <- cumsum(sizes)
+            remaining_after_remove <- total_bytes - cumulative_size
+
+            # Find first index where remaining is under limit and >= n_to_remove
             for (i in seq_along(sorted_keys)) {
-                k <- sorted_keys[i]
-                cumulative_size <- cumulative_size + object.size(get(k, envir = .browser_cache))
-                if ((total_bytes - cumulative_size) <= max_bytes && i >= n_to_remove) {
+                if (remaining_after_remove[i] <= max_bytes && i >= n_to_remove) {
                     n_to_remove <- i
                     break
                 }
@@ -191,15 +195,27 @@ cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries
         }
     }
 
-    # Remove oldest entries
+    # Remove oldest entries (memory cache, metadata, and disk cache)
     if (n_to_remove > 0) {
         to_remove <- sorted_keys[seq_len(n_to_remove)]
+        disk_cache_enabled <- isTRUE(getOption("misha.browser.disk_cache", TRUE))
+        disk_cache_dir <- if (disk_cache_enabled) .get_disk_cache_dir() else NULL
+
         for (k in to_remove) {
+            # Remove from memory cache
             if (exists(k, envir = .browser_cache)) {
                 rm(list = k, envir = .browser_cache)
             }
+            # Remove from metadata
             if (exists(k, envir = .browser_cache_meta)) {
                 rm(list = k, envir = .browser_cache_meta)
+            }
+            # Remove corresponding disk cache file
+            if (disk_cache_enabled && !is.null(disk_cache_dir)) {
+                disk_path <- file.path(disk_cache_dir, paste0(k, ".rds"))
+                if (file.exists(disk_path)) {
+                    tryCatch(unlink(disk_path), error = function(e) NULL)
+                }
             }
         }
     }

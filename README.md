@@ -402,8 +402,8 @@ browser_add_vlines(browser, name, source, file = NULL, intervals = NULL, ...)
 ### Interactive App
 
 ```r
-browser_run(browser, port = 3838, host = "0.0.0.0", launch.browser = TRUE)
-browser_launch(config, port = 3838, host = "0.0.0.0", profile = NULL)
+browser_run(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE)
+browser_launch(config, port = 8911, host = "0.0.0.0", profile = NULL)
 ```
 
 ### Local Deployment Helper

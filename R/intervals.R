@@ -100,7 +100,8 @@ extract_intervals_data <- function(panel, region) {
     }
 
     if (panel$source == "file") {
-        file_path <- panel$file
+        # Use resolved path if available (relative paths resolved against data_dir)
+        file_path <- panel$._resolved_file %||% panel$file
         if (is.null(file_path) || !file.exists(file_path)) {
             return(NULL)
         }
