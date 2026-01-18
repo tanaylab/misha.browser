@@ -200,7 +200,7 @@ test_that("transform_zscore handles mixed NA values", {
 test_that("transform_zscore handles single non-NA value", {
     x <- c(NA, 5, NA, NA)
     result <- transform_zscore(x, list())
-    
+
     expect_equal(result, c(NA, 0, NA, NA))
 })
 

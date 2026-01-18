@@ -3,7 +3,7 @@
 
 ## usethis namespace: start
 #' @importFrom rlang .data
-#' @importFrom stats setNames
+#' @importFrom stats setNames median quantile
 #' @importFrom utils head tail object.size
 ## usethis namespace: end
 NULL
@@ -14,7 +14,7 @@ utils::globalVariables(c(
     "y_level", "min_start", "max_end",
     "x_start", "x_end", "strand",
     "chrom", "track", "source", "mark",
-    "intervalID"
+    "intervalID", "label_x"
 ))
 
 #' Pipe operator

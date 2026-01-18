@@ -6,6 +6,9 @@
 # LRU metadata: track access times for cache eviction
 .browser_cache_meta <- new.env(parent = emptyenv())
 
+# Cache sizes: track object sizes to avoid expensive object.size() calls during pruning
+.browser_cache_sizes <- new.env(parent = emptyenv())
+
 # Disk cache directory (set via option or default)
 .get_disk_cache_dir <- function() {
     dir <- getOption("misha.browser.cache_dir", NULL)
@@ -100,6 +103,9 @@ cache_set <- function(key, value) {
     # Track LRU access time
     assign(key, Sys.time(), envir = .browser_cache_meta)
 
+    # Track object size for efficient pruning
+    assign(key, as.numeric(object.size(value)), envir = .browser_cache_sizes)
+
     # Optionally write to disk
     if (isTRUE(getOption("misha.browser.disk_cache", TRUE))) {
         disk_path <- file.path(.get_disk_cache_dir(), paste0(key, ".rds"))
@@ -171,13 +177,17 @@ cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries
     # Calculate how many to remove
     n_to_remove <- n_entries - max_entries
 
-    # Also check byte size - calculate sizes once, not twice
+    # Also check byte size - use pre-tracked sizes for efficiency
     if (!is.null(max_bytes)) {
-        # Calculate sizes incrementally (more memory efficient for large caches)
-        sizes <- numeric(length(sorted_keys))
-        for (i in seq_along(sorted_keys)) {
-            sizes[i] <- as.numeric(object.size(get(sorted_keys[i], envir = .browser_cache)))
-        }
+        # Use pre-tracked sizes from .browser_cache_sizes (set during cache_set)
+        sizes <- vapply(sorted_keys, function(k) {
+            if (exists(k, envir = .browser_cache_sizes)) {
+                get(k, envir = .browser_cache_sizes)
+            } else {
+                # Fallback for entries without tracked size (legacy)
+                as.numeric(object.size(get(k, envir = .browser_cache)))
+            }
+        }, numeric(1))
         total_bytes <- sum(sizes)
 
         if (total_bytes > max_bytes) {
@@ -210,6 +220,10 @@ cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries
             if (exists(k, envir = .browser_cache_meta)) {
                 rm(list = k, envir = .browser_cache_meta)
             }
+            # Remove from size tracking
+            if (exists(k, envir = .browser_cache_sizes)) {
+                rm(list = k, envir = .browser_cache_sizes)
+            }
             # Remove corresponding disk cache file
             if (disk_cache_enabled && !is.null(disk_cache_dir)) {
                 disk_path <- file.path(disk_cache_dir, paste0(k, ".rds"))
@@ -233,6 +247,9 @@ browser_clear_cache <- function(disk = TRUE) {
 
     # Clear LRU metadata
     rm(list = ls(.browser_cache_meta), envir = .browser_cache_meta)
+
+    # Clear size tracking
+    rm(list = ls(.browser_cache_sizes), envir = .browser_cache_sizes)
 
     # Clear disk cache if requested
     if (disk && isTRUE(getOption("misha.browser.disk_cache", TRUE))) {

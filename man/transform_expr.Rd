@@ -17,6 +17,14 @@ transform_expr(x, pos, params)
 Transformed vector
 }
 \description{
-Custom expression transform
+Evaluates a custom R expression on the data. The expression has access to
+variables \code{x} (the data vector) and \code{pos} (position vector).
 }
+\section{Security Note}{
+
+This function evaluates arbitrary R expressions from configuration files.
+While the evaluation environment is restricted to base R functions,
+configuration files should only be loaded from trusted sources.
+}
+
 \keyword{internal}

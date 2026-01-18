@@ -21,7 +21,6 @@ Imports:
     patchwork,
     data.table,
     dplyr,
-    tidyr,
     zoo,
     yaml,
     shiny,
@@ -37,6 +36,7 @@ Imports:
     scales,
     tools
 Suggests:
+    prego,
     testthat (>= 3.0.0),
     future,
     promises,

@@ -345,7 +345,7 @@ print.browser <- function(x, ...) {
     if (length(x$cfg$vtracks) > 0) {
         cli::cli_h2("Virtual Tracks ({length(x$cfg$vtracks)})")
         for (vt in x$cfg$vtracks) {
-            cli::cli_bullets(c("*" = "{vt$name} -> {vt$track}"))
+            cli::cli_bullets(c("*" = "{vt$name} -> {vt$src %||% vt$expr %||% 'sequence'}"))
         }
     }
 

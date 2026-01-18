@@ -214,7 +214,6 @@ intervals_exist <- function(intervals) {
 #' Format genomic coordinates for display
 #'
 #' @param chrom Chromosome
-
 #' @param start Start position
 #' @param end End position
 #' @return Formatted string like "chr1:1,000,000-2,000,000"
