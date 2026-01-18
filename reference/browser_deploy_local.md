@@ -11,6 +11,7 @@ browser_deploy_local(
   config = NULL,
   config_name = "config.yaml",
   profile = "server",
+  server_root = NULL,
   overwrite = FALSE,
   write_env = TRUE,
   extra_files = NULL,
@@ -35,6 +36,11 @@ browser_deploy_local(
 - profile:
 
   Profile name to set in the deployment environment (default: "server").
+
+- server_root:
+
+  Optional path to misha root on the server. If provided, updates the
+  misha_root in the specified profile of the deployed config file.
 
 - overwrite:
 

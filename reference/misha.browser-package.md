@@ -6,6 +6,12 @@ genomic tracks with support for custom transformations, faceting,
 vertical line annotations, and gene models. Includes a Shiny application
 for interactive exploration.
 
+## See also
+
+Useful links:
+
+- <https://tanaylab.github.io/misha.browser/>
+
 ## Author
 
 **Maintainer**: Aviezer Lifshitz <aviezer.lifshitz@weizmann.ac.il>

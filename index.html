@@ -116,6 +116,7 @@
 <span>    dest_dir <span class="op">=</span> <span class="st">"/net/mraid20/export/tgdata/db/tgdb/tanaywiz/apps/my_user/app"</span>,</span>
 <span>    config <span class="op">=</span> <span class="st">"config.yaml"</span>,</span>
 <span>    profile <span class="op">=</span> <span class="st">"server"</span>,</span>
+<span>    server_root <span class="op">=</span> <span class="st">"/misha_dbs/mm10/trackdb/"</span>,  <span class="co"># Optional: override misha root on server</span></span>
 <span>    overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>    touch_restart <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
@@ -626,7 +627,8 @@
 <span><span class="fu"><a href="reference/browser_save.html">browser_save</a></span><span class="op">(</span><span class="va">browser</span>, <span class="va">file</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/browser_deploy_local.html">browser_deploy_local</a></span><span class="op">(</span><span class="va">dest_dir</span>,</span>
 <span>    config <span class="op">=</span> <span class="cn">NULL</span>, config_name <span class="op">=</span> <span class="st">"config.yaml"</span>, profile <span class="op">=</span> <span class="st">"server"</span>,</span>
-<span>    overwrite <span class="op">=</span> <span class="cn">FALSE</span>, write_env <span class="op">=</span> <span class="cn">TRUE</span>, extra_files <span class="op">=</span> <span class="cn">NULL</span>, touch_restart <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>    server_root <span class="op">=</span> <span class="cn">NULL</span>, overwrite <span class="op">=</span> <span class="cn">FALSE</span>, write_env <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    extra_files <span class="op">=</span> <span class="cn">NULL</span>, touch_restart <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -678,6 +680,7 @@
 <span>  dest_dir <span class="op">=</span> <span class="st">"/srv/shiny-server/misha-browser"</span>,</span>
 <span>  config <span class="op">=</span> <span class="st">"inst/examples/silicus.yaml"</span>,</span>
 <span>  profile <span class="op">=</span> <span class="st">"server"</span>,</span>
+<span>  server_root <span class="op">=</span> <span class="st">"/misha_dbs/mm10"</span>,  <span class="co"># Optional: override misha root on server</span></span>
 <span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  extra_files <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"data/mm10_cgdom.csv"</span>, <span class="st">"data/ctcf_hits_1bp.tsv"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
