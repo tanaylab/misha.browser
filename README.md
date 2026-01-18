@@ -21,7 +21,7 @@ An interactive genome browser for [misha](https://github.com/tanaylab/misha) gen
 remotes::install_github("tanaylab/misha.browser")
 ```
 
-## TL;DR Workflow (Silicus-style)
+## TL;DR Workflow
 
 ```r
 library(misha.browser)
