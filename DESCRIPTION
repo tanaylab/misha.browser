@@ -44,3 +44,5 @@ Suggests:
     rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Remotes: tanaylab/prego
+URL: https://tanaylab.github.io/misha.browser/
