@@ -9,6 +9,7 @@
 #' @param config Path to a YAML config file to copy. When NULL, no config is copied.
 #' @param config_name Filename to use in the destination (default: "config.yaml").
 #' @param profile Profile name to set in the deployment environment (default: "server").
+#' @param server_root Optional path to misha root on the server. If provided, updates the misha_root in the specified profile of the deployed config file.
 #' @param overwrite Logical, overwrite existing files if TRUE.
 #' @param write_env Logical, write a `.Renviron` with MISHA_BROWSER_* vars.
 #' @param extra_files Optional character vector of file paths to copy as-is.
@@ -19,6 +20,7 @@ browser_deploy_local <- function(dest_dir,
                                  config = NULL,
                                  config_name = "config.yaml",
                                  profile = "server",
+                                 server_root = NULL,
                                  overwrite = FALSE,
                                  write_env = TRUE,
                                  extra_files = NULL,
@@ -55,7 +57,24 @@ browser_deploy_local <- function(dest_dir,
         if (file.exists(config_dest) && !isTRUE(overwrite)) {
             cli::cli_abort("Config already exists at {config_dest}. Set overwrite=TRUE to replace.")
         }
-        file.copy(config, config_dest, overwrite = TRUE)
+
+        # Load config and update misha_root if server_root is provided
+        cfg <- yaml::read_yaml(config)
+        if (!is.null(server_root) && nzchar(server_root)) {
+            # Ensure profiles section exists
+            if (is.null(cfg$profiles)) {
+                cfg$profiles <- list()
+            }
+            # Ensure the specified profile exists
+            if (is.null(cfg$profiles[[profile]])) {
+                cfg$profiles[[profile]] <- list()
+            }
+            # Update misha_root for the profile
+            cfg$profiles[[profile]]$misha_root <- server_root
+        }
+
+        # Write the modified config
+        yaml::write_yaml(cfg, config_dest)
     }
 
     extra_copied <- character(0)
@@ -83,6 +102,9 @@ browser_deploy_local <- function(dest_dir,
             sprintf("MISHA_BROWSER_PROFILE=%s", profile),
             sprintf("MISHA_BROWSER_CONFIG=%s", config_name)
         )
+        if (!is.null(server_root) && nzchar(server_root)) {
+            env_lines <- c(env_lines, sprintf("MISHA_BROWSER_SERVER_ROOT=%s", server_root))
+        }
         writeLines(env_lines, env_path)
     }
 

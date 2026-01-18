@@ -394,7 +394,7 @@ browser_save <- function(browser, file) {
 #' @param ... Additional panel options
 #' @return Updated browser object
 #' @export
-browser_add_panel <- function(browser, name, tracks,
+browser_add_panel <- function(browser, name, tracks = NULL,
                               grouping = NULL,
                               facet_by = NULL,
                               transforms = list(),

@@ -8,6 +8,13 @@
 \description{
 A configurable, interactive genome browser built on ggplot2 and patchwork. Provides YAML-based configuration for visualization of misha genomic tracks with support for custom transformations, faceting, vertical line annotations, and gene models. Includes a Shiny application for interactive exploration.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://tanaylab.github.io/misha.browser/}
+}
+
+}
 \author{
 \strong{Maintainer}: Aviezer Lifshitz \email{aviezer.lifshitz@weizmann.ac.il}
 

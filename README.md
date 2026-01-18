@@ -69,6 +69,7 @@ browser_deploy_local(
     dest_dir = "/net/mraid20/export/tgdata/db/tgdb/tanaywiz/apps/my_user/app",
     config = "config.yaml",
     profile = "server",
+    server_root = "/misha_dbs/mm10/trackdb/",  # Optional: override misha root on server
     overwrite = TRUE,
     touch_restart = TRUE
 )
@@ -463,7 +464,8 @@ browser_load(file)
 browser_save(browser, file)
 browser_deploy_local(dest_dir,
     config = NULL, config_name = "config.yaml", profile = "server",
-    overwrite = FALSE, write_env = TRUE, extra_files = NULL, touch_restart = TRUE
+    server_root = NULL, overwrite = FALSE, write_env = TRUE,
+    extra_files = NULL, touch_restart = TRUE
 )
 ```
 
@@ -515,6 +517,7 @@ browser_deploy_local(
   dest_dir = "/srv/shiny-server/misha-browser",
   config = "inst/examples/silicus.yaml",
   profile = "server",
+  server_root = "/misha_dbs/mm10",  # Optional: override misha root on server
   overwrite = TRUE,
   extra_files = c("data/mm10_cgdom.csv", "data/ctcf_hits_1bp.tsv")
 )

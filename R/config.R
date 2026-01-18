@@ -91,7 +91,13 @@ resolve_profile <- function(cfg, profile = NULL, config_dir = ".") {
 
         cfg$._base_dir <- base_dir
         cfg$._data_dir <- data_dir
-        cfg$._misha_root <- profile_cfg$misha_root
+        # Check for server root override from environment variable
+        server_root <- Sys.getenv("MISHA_BROWSER_SERVER_ROOT", "")
+        if (nzchar(server_root)) {
+            cfg$._misha_root <- server_root
+        } else {
+            cfg$._misha_root <- profile_cfg$misha_root
+        }
 
         # Resolve file paths in vlines
         if (!is.null(cfg$vlines)) {

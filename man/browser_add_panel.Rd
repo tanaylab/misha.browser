@@ -7,7 +7,7 @@
 browser_add_panel(
   browser,
   name,
-  tracks,
+  tracks = NULL,
   grouping = NULL,
   facet_by = NULL,
   transforms = list(),
