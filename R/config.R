@@ -421,10 +421,13 @@ validate_vline <- function(vline, index) {
 #' @return Configuration list
 #' @export
 browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
+    # Resolve misha_root from parameter or environment
+    resolved_misha_root <- misha_root %||% Sys.getenv("MISHA_ROOT", "")
+
     cfg <- list(
         profiles = list(
             local = list(
-                misha_root = misha_root %||% Sys.getenv("MISHA_ROOT", "")
+                misha_root = resolved_misha_root
             )
         ),
         panels = list(),
@@ -450,7 +453,16 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
         start = list()
     )
 
-    validate_config(cfg)
+    cfg <- validate_config(cfg)
+
+    # Set internal misha_root field (used by browser_create to call gsetroot)
+    # This is normally done by resolve_profile when loading from YAML,
+    # but we need to set it directly when creating config programmatically
+    if (nzchar(resolved_misha_root)) {
+        cfg$._misha_root <- resolved_misha_root
+    }
+
+    cfg
 }
 
 #' Save configuration to YAML file

@@ -833,8 +833,8 @@ config_editor_server <- function(id, browser_rv, original_config) {
         shiny::observe({
             vtracks <- draft_vtracks()
 
-            # Destroy old observers
-            old_obs <- delete_vt_observers()
+            # Destroy old observers (use isolate to avoid reactive dependency loop)
+            old_obs <- shiny::isolate(delete_vt_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -861,8 +861,8 @@ config_editor_server <- function(id, browser_rv, original_config) {
         shiny::observe({
             vtracks <- draft_vtracks()
 
-            # Destroy old observers
-            old_obs <- func_change_observers()
+            # Destroy old observers (use isolate to avoid reactive dependency loop)
+            old_obs <- shiny::isolate(func_change_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -905,7 +905,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             vtracks <- draft_vtracks()
 
             # Destroy old observers
-            old_obs <- add_vt_tr_observers()
+            old_obs <- shiny::isolate(add_vt_tr_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -936,7 +936,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             vtracks <- draft_vtracks()
 
             # Destroy old observers
-            old_obs <- delete_vt_tr_observers()
+            old_obs <- shiny::isolate(delete_vt_tr_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1032,7 +1032,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             panels <- draft_panels()
 
             # Destroy old observers
-            old_obs <- delete_pnl_observers()
+            old_obs <- shiny::isolate(delete_pnl_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1115,7 +1115,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             colors <- draft_colors()
 
             # Destroy old observers
-            old_obs <- delete_color_observers()
+            old_obs <- shiny::isolate(delete_color_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1253,7 +1253,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             vlines <- draft_vlines()
 
             # Destroy old observers
-            old_obs <- delete_vl_observers()
+            old_obs <- shiny::isolate(delete_vl_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1675,7 +1675,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             intervals <- uploaded_intervals()
 
             # Destroy old observers
-            old_obs <- delete_intervals_observers()
+            old_obs <- shiny::isolate(delete_intervals_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1703,7 +1703,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             pssms <- uploaded_pssms()
 
             # Destroy old observers
-            old_obs <- delete_pssm_observers()
+            old_obs <- shiny::isolate(delete_pssm_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1854,7 +1854,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             panels <- draft_panels()
 
             # Destroy old observers
-            old_obs <- add_hline_observers()
+            old_obs <- shiny::isolate(add_hline_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }
@@ -1890,7 +1890,7 @@ config_editor_server <- function(id, browser_rv, original_config) {
             panels <- draft_panels()
 
             # Destroy old observers
-            old_obs <- delete_hline_observers()
+            old_obs <- shiny::isolate(delete_hline_observers())
             for (obs in old_obs) {
                 obs$destroy()
             }

@@ -332,3 +332,96 @@ test_that("extract_panel_data handles panel with no tracks", {
     result <- extract_panel_data(browser, panel, make_region("chr1", 1000, 2000), use_cache = FALSE)
     expect_null(result)
 })
+
+test_that("extract_panel_data fixed mode applies smooth_window=1 to panel smooth transform", {
+    browser <- browser_create()
+    browser$cfg$plot$extraction_mode <- "fixed"
+    browser$cfg$plot$iterator <- 32
+    browser$cfg$vtracks <- list()
+    browser$state$smooth_window <- 1
+
+    panel <- list(
+        name = "test",
+        type = "data",
+        tracks = c("track1"),
+        transforms = list(list(type = "smooth", window = 10))
+    )
+
+    captured_transforms <- NULL
+    local_mocked_bindings(
+        resolve_track_specs = function(tracks, browser, cfg) {
+            list(exprs = c("track1"), names = c("track1"), temp_vtracks = character(0))
+        },
+        extract_tracks = function(tracks, region, iterator, colnames = NULL) {
+            data.frame(
+                chrom = "chr1",
+                start = 1000L,
+                end = 1032L,
+                pos = 1016L,
+                track1 = 1
+            )
+        },
+        apply_transforms = function(data, transforms, value_cols) {
+            captured_transforms <<- transforms
+            data
+        },
+        add_track_metadata = function(data, panel, track_names) data,
+        cache_set = function(key, value) NULL,
+        .package = "misha.browser"
+    )
+
+    result <- extract_panel_data(
+        browser = browser,
+        panel = panel,
+        region = make_region("chr1", 1000, 2000),
+        use_cache = FALSE
+    )
+
+    expect_false(is.null(result))
+    smooth_idx <- which(vapply(captured_transforms, function(t) identical(t$type, "smooth"), logical(1)))
+    expect_length(smooth_idx, 1)
+    expect_equal(captured_transforms[[smooth_idx]]$window, 1)
+})
+
+test_that("extract_panel_data fixed mode handles smooth_window=0 for panel smooth transform", {
+    browser <- browser_create()
+    browser$cfg$plot$extraction_mode <- "fixed"
+    browser$cfg$plot$iterator <- 32
+    browser$cfg$vtracks <- list()
+    browser$state$smooth_window <- 0
+
+    panel <- list(
+        name = "test",
+        type = "data",
+        tracks = c("track1"),
+        transforms = list(list(type = "smooth", window = 10))
+    )
+
+    local_mocked_bindings(
+        resolve_track_specs = function(tracks, browser, cfg) {
+            list(exprs = c("track1"), names = c("track1"), temp_vtracks = character(0))
+        },
+        extract_tracks = function(tracks, region, iterator, colnames = NULL) {
+            data.frame(
+                chrom = c("chr1", "chr1", "chr1"),
+                start = c(1000L, 1032L, 1064L),
+                end = c(1032L, 1064L, 1096L),
+                pos = c(1016L, 1048L, 1080L),
+                track1 = c(1, 2, 3)
+            )
+        },
+        add_track_metadata = function(data, panel, track_names) data,
+        cache_set = function(key, value) NULL,
+        .package = "misha.browser"
+    )
+
+    result <- extract_panel_data(
+        browser = browser,
+        panel = panel,
+        region = make_region("chr1", 1000, 2000),
+        use_cache = FALSE
+    )
+
+    expect_false(is.null(result))
+    expect_equal(result$track1, c(1, 2, 3))
+})

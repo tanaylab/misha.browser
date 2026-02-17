@@ -16,6 +16,17 @@ test_that("transform_smooth handles short vectors", {
     expect_equal(result, x) # Should return unchanged
 })
 
+test_that("transform_smooth treats window <= 1 as no smoothing", {
+    x <- c(1, 3, 2, 5, 4)
+    expect_equal(transform_smooth(x, list(window = 1)), x)
+    expect_equal(transform_smooth(x, list(window = 0)), x)
+})
+
+test_that("transform_smooth handles very large finite window gracefully", {
+    x <- 1:10
+    expect_equal(transform_smooth(x, list(window = 1e12)), x)
+})
+
 test_that("transform_log2 applies correctly", {
     x <- c(0, 1, 3, 7, 15)
     result <- transform_log2(x, list(offset = 1))

@@ -403,6 +403,32 @@ browser_add_panel <- function(browser, name, tracks = NULL,
                               ylim = NULL,
                               height = 2,
                               ...) {
+    # Auto-create vtracks for each track
+    if (!is.null(tracks) && length(tracks) > 0) {
+        existing_vtrack_names <- vapply(
+            browser$cfg$vtracks %||% list(),
+            function(v) v$name,
+            character(1)
+        )
+        for (track in tracks) {
+            # Auto-vtrack creation applies only to plain track-name strings
+            if (!is.character(track) || length(track) != 1 || is.na(track) || !nzchar(track)) {
+                next
+            }
+            # Skip if vtrack already exists with this name
+            if (track %in% existing_vtrack_names) {
+                next
+            }
+            vtrack <- list(
+                name = track,
+                src = track,
+                func = "avg"
+            )
+            browser$cfg$vtracks <- c(browser$cfg$vtracks %||% list(), list(vtrack))
+            existing_vtrack_names <- c(existing_vtrack_names, track)
+        }
+    }
+
     panel <- list(
         name = name,
         type = "data",
@@ -465,6 +491,32 @@ browser_set_tracks <- function(browser, panel_name, tracks) {
     panel <- get_panel(browser$cfg, panel_name)
     if (is.null(panel)) {
         cli::cli_abort("Panel '{panel_name}' not found")
+    }
+
+    # Auto-create vtracks for each track
+    if (!is.null(tracks) && length(tracks) > 0) {
+        existing_vtrack_names <- vapply(
+            browser$cfg$vtracks %||% list(),
+            function(v) v$name,
+            character(1)
+        )
+        for (track in tracks) {
+            # Auto-vtrack creation applies only to plain track-name strings
+            if (!is.character(track) || length(track) != 1 || is.na(track) || !nzchar(track)) {
+                next
+            }
+            # Skip if vtrack already exists with this name
+            if (track %in% existing_vtrack_names) {
+                next
+            }
+            vtrack <- list(
+                name = track,
+                src = track,
+                func = "avg"
+            )
+            browser$cfg$vtracks <- c(browser$cfg$vtracks %||% list(), list(vtrack))
+            existing_vtrack_names <- c(existing_vtrack_names, track)
+        }
     }
 
     panel$tracks <- tracks

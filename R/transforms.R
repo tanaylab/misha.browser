@@ -100,8 +100,21 @@ apply_single_transform <- function(x, pos = NULL, type, params) {
 #' @return Smoothed vector
 #' @keywords internal
 transform_smooth <- function(x, params) {
-    window <- params$window %||% 10
+    window <- as.numeric(params$window %||% 10)
     align <- params$align %||% "center"
+    if (!is.finite(window)) {
+        return(x)
+    }
+    if (window > .Machine$integer.max) {
+        return(x)
+    }
+    window <- as.integer(round(window))
+    if (is.na(window)) {
+        return(x)
+    }
+    if (window <= 1) {
+        return(x)
+    }
 
     if (length(x) < window) {
         return(x)

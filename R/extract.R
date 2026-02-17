@@ -169,13 +169,21 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     # Apply transforms
     t2 <- Sys.time()
     transforms <- panel$transforms %||% list()
+    smooth_window <- browser$state$smooth_window
     if (extraction_mode %in% c("dynamic", "dynamic_smooth")) {
         # In dynamic/dynamic_smooth modes, skip smooth transforms
         # (iterator or vtrack aggregation provides smoothing)
         transforms <- Filter(function(t) t$type != "smooth", transforms)
-    } else if (!is.null(browser$state$smooth_window)) {
-        # In fixed mode, update smooth window from state
-        transforms <- update_smooth_window(transforms, browser$state$smooth_window)
+    } else if (!is.null(smooth_window)) {
+        # In fixed mode, apply smooth window from state
+        has_smooth <- any(vapply(transforms, function(t) identical(t$type, "smooth"), logical(1)))
+        if (has_smooth) {
+            # Always update existing smooth transforms from UI state
+            transforms <- update_smooth_window(transforms, smooth_window)
+        } else if (smooth_window > 1) {
+            # Add smooth transform only when user requests smoothing
+            transforms <- c(transforms, list(list(type = "smooth", window = smooth_window)))
+        }
     }
 
     value_cols <- setdiff(names(data), c("chrom", "start", "end", "pos", "intervalID"))

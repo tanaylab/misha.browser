@@ -39,6 +39,26 @@ test_that("browser_add_panel supports method chaining", {
     expect_length(browser$cfg$panels, 3)
 })
 
+test_that("browser_add_panel does not create duplicate auto-vtracks for repeated tracks", {
+    browser <- browser_create() %>%
+        browser_add_panel(name = "signal", tracks = c("dup_track", "dup_track"))
+
+    vtrack_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_equal(sum(vtrack_names == "dup_track"), 1)
+})
+
+test_that("browser_add_panel supports inline track specs without auto-vtrack errors", {
+    browser <- browser_create()
+    expect_no_error(
+        browser <- browser_add_panel(
+            browser,
+            name = "signal",
+            tracks = list(list(expr = "track1 * 2", name = "double"))
+        )
+    )
+    expect_length(browser$cfg$panels, 1)
+})
+
 test_that("browser_add_transform adds transforms to panel", {
     browser <- browser_create() %>%
         browser_add_panel(name = "signal", tracks = "track1") %>%
@@ -62,6 +82,29 @@ test_that("browser_set_tracks updates tracks", {
         browser_set_tracks("signal", c("new1", "new2", "new3"))
 
     expect_equal(browser$cfg$panels[[1]]$tracks, c("new1", "new2", "new3"))
+})
+
+test_that("browser_set_tracks does not create duplicate auto-vtracks for repeated tracks", {
+    browser <- browser_create() %>%
+        browser_add_panel(name = "signal", tracks = c("old1", "old2")) %>%
+        browser_set_tracks("signal", c("dup_track", "dup_track", "other_track"))
+
+    vtrack_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_equal(sum(vtrack_names == "dup_track"), 1)
+})
+
+test_that("browser_set_tracks supports inline track specs without auto-vtrack errors", {
+    browser <- browser_create() %>%
+        browser_add_panel(name = "signal", tracks = "old1")
+
+    expect_no_error(
+        browser <- browser_set_tracks(
+            browser,
+            "signal",
+            list(list(expr = "track1 * 2", name = "double"))
+        )
+    )
+    expect_length(browser$cfg$panels[[1]]$tracks, 1)
 })
 
 test_that("browser_set_ylim updates ylim", {

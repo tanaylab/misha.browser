@@ -13,7 +13,9 @@ browser_server <- function(browser) {
         active_tracks <- shiny::reactiveVal(get_default_tracks(browser))
         original_config <- browser$cfg
 
-        config_editor <- config_editor_server("config_editor", browser_rv, original_config)
+        # Lazy-initialize config editor only when first opened
+        config_editor_initialized <- shiny::reactiveVal(FALSE)
+        config_editor <- NULL
 
         # === Initialize ===
         shiny::observe({
@@ -174,21 +176,15 @@ browser_server <- function(browser) {
             active_tracks(tracks)
         })
 
-        # Smooth window (debounced to avoid excessive updates during typing)
-        smooth_window_debounced <- shiny::debounce(
-            shiny::reactive(input$smooth_window),
-            millis = 500
-        )
-
-        shiny::observe({
-            sw <- smooth_window_debounced()
-            if (!is.null(sw) && is.finite(sw)) {
-                br <- browser_rv()
-                if (!identical(br$state$smooth_window, sw)) {
-                    br$state$smooth_window <- sw
-                    browser_rv(br)
-                }
+        # Smooth window
+        shiny::observeEvent(input$smooth_window, {
+            br <- browser_rv()
+            smooth_window <- as.numeric(input$smooth_window)
+            if (!is.finite(smooth_window)) {
+                return()
             }
+            br$state$smooth_window <- smooth_window
+            browser_rv(br)
         })
 
         # Extraction mode help
@@ -399,8 +395,12 @@ browser_server <- function(browser) {
             shiny::showNotification("Cache cleared", type = "message")
         })
 
-        # Config editor
+        # Config editor (lazy initialization)
         shiny::observeEvent(input$open_config_editor, {
+            if (!config_editor_initialized()) {
+                config_editor <<- config_editor_server("config_editor", browser_rv, original_config)
+                config_editor_initialized(TRUE)
+            }
             config_editor$show_modal()
         })
 
