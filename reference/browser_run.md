@@ -5,7 +5,12 @@ Launches a Shiny web application for interactive genome browsing.
 ## Usage
 
 ``` r
-browser_run(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE)
+browser_run(
+  browser,
+  port = .DEFAULT_PORT,
+  host = .DEFAULT_HOST,
+  launch.browser = TRUE
+)
 ```
 
 ## Arguments

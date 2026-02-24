@@ -5,7 +5,7 @@ Zoom in on current region
 ## Usage
 
 ``` r
-browser_zoom_in(browser, factor = 2)
+browser_zoom_in(browser, factor = .DEFAULT_ZOOM_FACTOR)
 ```
 
 ## Arguments

@@ -5,7 +5,7 @@ Move view right
 ## Usage
 
 ``` r
-browser_move_right(browser, fraction = 0.5)
+browser_move_right(browser, fraction = .DEFAULT_MOVE_FRACTION)
 ```
 
 ## Arguments

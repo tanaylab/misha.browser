@@ -69,12 +69,13 @@ variables <code>x</code> (the data vector) and <code>pos</code> (position vector
     <p>Transformed vector</p>
     </div>
     <div class="section level2">
-    <h2 id="security-note">Security Note<a class="anchor" aria-label="anchor" href="#security-note"></a></h2>
+    <h2 id="security-warning">Security Warning<a class="anchor" aria-label="anchor" href="#security-warning"></a></h2>
 
 
-<p>This function evaluates arbitrary R expressions from configuration files.
-While the evaluation environment is restricted to base R functions,
-configuration files should only be loaded from trusted sources.</p>
+<p>This function evaluates R expressions from YAML configuration files using
+<code><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval()</a></code>. The evaluation environment is restricted to a whitelist of safe
+math and vector functions (no file I/O, system calls, or environment access).
+Nevertheless, <strong>only load configuration files from trusted sources</strong>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

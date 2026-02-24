@@ -51,8 +51,7 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9">
-<div class="section level1">
+  <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="mishabrowser">misha.browser<a class="anchor" aria-label="anchor" href="#mishabrowser"></a>
 </h1></div>
 <p>An interactive genome browser for <a href="https://github.com/tanaylab/misha" class="external-link">misha</a> genomic tracks. Built on ggplot2 and patchwork, with YAML-based configuration and a Shiny application for interactive exploration.</p>
@@ -96,13 +95,13 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tanaylab.github.io/misha.browser/">misha.browser</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1) Create a browser rooted at the mm10 misha database</span></span>
-<span><span class="va">browser</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/browser_create.html">browser_create</a></span><span class="op">(</span>misha_root <span class="op">=</span> <span class="st">"/net/mraid20/export/data4/db/tgdb/mm10/trackdb/"</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">browser</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/browser_create.html">browser_create</a></span><span class="op">(</span>misha_root <span class="op">=</span> <span class="st">"/net/mraid20/export/data4/db/tgdb/mm10/trackdb/"</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
 <span>    <span class="fu"><a href="reference/browser_add_panel.html">browser_add_panel</a></span><span class="op">(</span></span>
 <span>        name <span class="op">=</span> <span class="st">"signal"</span>,</span>
 <span>        tracks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"jk.epipcg.pcg.CRJK_0364_k27me3_eb_j1_d4_a"</span>, <span class="st">"jk.epipcg.pcg.CRJK_0411_k4me3_wt_to_wt_eb_d3"</span><span class="op">)</span>,</span>
 <span>        plot_type <span class="op">=</span> <span class="st">"line"</span>,</span>
 <span>        height <span class="op">=</span> <span class="fl">3</span></span>
-<span>    <span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span>    <span class="op">)</span> <span class="op">%&gt;%</span></span>
 <span>    <span class="fu"><a href="reference/browser_add_panel.html">browser_add_panel</a></span><span class="op">(</span></span>
 <span>        name <span class="op">=</span> <span class="st">"genes"</span>,</span>
 <span>        type <span class="op">=</span> <span class="st">"annotation"</span></span>
@@ -156,15 +155,15 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tanaylab.github.io/misha.browser/">misha.browser</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create browser programmatically</span></span>
-<span><span class="va">browser</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/browser_create.html">browser_create</a></span><span class="op">(</span>misha_root <span class="op">=</span> <span class="st">"/path/to/misha"</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="va">browser</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/browser_create.html">browser_create</a></span><span class="op">(</span>misha_root <span class="op">=</span> <span class="st">"/path/to/misha"</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
 <span>    <span class="fu"><a href="reference/browser_add_panel.html">browser_add_panel</a></span><span class="op">(</span></span>
 <span>        name <span class="op">=</span> <span class="st">"signal"</span>,</span>
 <span>        tracks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"chip.h3k27me3"</span>, <span class="st">"chip.h3k4me3"</span><span class="op">)</span>,</span>
 <span>        plot_type <span class="op">=</span> <span class="st">"line"</span>,</span>
 <span>        colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>h3k27me3 <span class="op">=</span> <span class="st">"blue"</span>, h3k4me3 <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="reference/browser_add_transform.html">browser_add_transform</a></span><span class="op">(</span><span class="st">"signal"</span>, type <span class="op">=</span> <span class="st">"smooth"</span>, window <span class="op">=</span> <span class="fl">10</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="reference/browser_add_transform.html">browser_add_transform</a></span><span class="op">(</span><span class="st">"signal"</span>, type <span class="op">=</span> <span class="st">"log2"</span>, offset <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op"><a href="reference/pipe.html">%&gt;%</a></span></span>
+<span>    <span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>    <span class="fu"><a href="reference/browser_add_transform.html">browser_add_transform</a></span><span class="op">(</span><span class="st">"signal"</span>, type <span class="op">=</span> <span class="st">"smooth"</span>, window <span class="op">=</span> <span class="fl">10</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>    <span class="fu"><a href="reference/browser_add_transform.html">browser_add_transform</a></span><span class="op">(</span><span class="st">"signal"</span>, type <span class="op">=</span> <span class="st">"log2"</span>, offset <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
 <span>    <span class="fu"><a href="reference/browser_set_region.html">browser_set_region</a></span><span class="op">(</span><span class="st">"chr5:118000000-121000000"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/browser_plot.html">browser_plot</a></span><span class="op">(</span><span class="va">browser</span><span class="op">)</span></span></code></pre></div>
@@ -835,7 +834,6 @@
 <p>MIT</p>
 </div>
 </div>
-
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
@@ -860,12 +858,7 @@
 </ul>
 </div>
 
-<div class="dev-status">
-<h2 data-toc-skip>Dev status</h2>
-<ul class="list-unstyled">
-<li><a href="https://github.com/tanaylab/misha.browser/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/tanaylab/misha.browser/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
-</ul>
-</div>
+
 
   </aside>
 </div>

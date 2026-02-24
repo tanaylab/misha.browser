@@ -506,8 +506,8 @@ extracted group names - Use `_default` for fallback:
 
 If you encounter issues not covered here:
 
-1.  Check the [GitHub
-    issues](https://github.com/tanaylab/misha.browser/issues)
-2.  Ensure you have the latest version:
+1.  Check the package site: <https://tanaylab.github.io/misha.browser/>
+2.  Contact the maintainer: <aviezer.lifshitz@weizmann.ac.il>
+3.  Ensure you have the latest version:
     `remotes::install_github("tanaylab/misha.browser")`
-3.  Try with a minimal configuration to isolate the problem
+4.  Try with a minimal configuration to isolate the problem

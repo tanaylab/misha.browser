@@ -6,8 +6,8 @@ Removes least-recently-used entries when cache exceeds size limits.
 
 ``` r
 cache_prune(
-  max_entries = getOption("misha.browser.cache_max_entries", 100),
-  max_bytes = getOption("misha.browser.cache_max_bytes", 5e+08)
+  max_entries = getOption("misha.browser.cache_max_entries", .DEFAULT_CACHE_MAX_ENTRIES),
+  max_bytes = getOption("misha.browser.cache_max_bytes", .DEFAULT_CACHE_MAX_BYTES)
 )
 ```
 

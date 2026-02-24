@@ -5,7 +5,7 @@ Extract tracks from misha
 ## Usage
 
 ``` r
-extract_tracks(tracks, region, iterator = 32, colnames = NULL)
+extract_tracks(tracks, region, iterator = .DEFAULT_ITERATOR, colnames = NULL)
 ```
 
 ## Arguments

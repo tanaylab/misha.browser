@@ -5,7 +5,11 @@ Ensures approximately target_points data points regardless of view span.
 ## Usage
 
 ``` r
-calc_iterator(span, base_iter = 32, target_points = 4000)
+calc_iterator(
+  span,
+  base_iter = .DEFAULT_ITERATOR,
+  target_points = .DEFAULT_TARGET_POINTS
+)
 ```
 
 ## Arguments
