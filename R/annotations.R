@@ -55,8 +55,8 @@ render_annotation_panel <- function(panel, region, vlines_data = NULL) {
         }
 
         # Compute intron lines (full extent of each gene)
-        introns_plot <- exons_plot %>%
-            dplyr::group_by(.data[[label_field]], y_level) %>%
+        introns_plot <- exons_plot |>
+            dplyr::group_by(.data[[label_field]], y_level) |>
             dplyr::summarise(start = min(start), end = max(end), .groups = "drop")
 
         # Arrow length (2% of window)
@@ -64,11 +64,11 @@ render_annotation_panel <- function(panel, region, vlines_data = NULL) {
 
         # Add TSS arrows
         if (nrow(tss_plot) > 0 && "strand" %in% names(tss_plot)) {
-            tss_plot <- tss_plot %>%
+            tss_plot <- tss_plot |>
                 dplyr::mutate(
                     x_start = ifelse(strand == 1, start, end),
                     x_end = ifelse(strand == 1, start + arrow_len, end - arrow_len)
-                ) %>%
+                ) |>
                 dplyr::filter(is.finite(x_start), is.finite(x_end), is.finite(y_level))
         }
 

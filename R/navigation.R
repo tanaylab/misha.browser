@@ -6,14 +6,14 @@
 #' @param factor Zoom factor (2 = double resolution, default)
 #' @return Updated browser object
 #' @export
-browser_zoom_in <- function(browser, factor = 2) {
+browser_zoom_in <- function(browser, factor = .DEFAULT_ZOOM_FACTOR) {
     region <- browser$state$current_region
     if (is.null(region)) {
         return(browser)
     }
 
     center <- interval_center(region)
-    new_width <- max(100, interval_width(region) / factor)
+    new_width <- max(.MIN_REGION_BP, interval_width(region) / factor)
 
     browser$state$current_region <- make_region(
         region$chrom, center - new_width / 2, center + new_width / 2
@@ -27,7 +27,7 @@ browser_zoom_in <- function(browser, factor = 2) {
 #' @param factor Zoom factor (2 = half resolution, default)
 #' @return Updated browser object
 #' @export
-browser_zoom_out <- function(browser, factor = 2) {
+browser_zoom_out <- function(browser, factor = .DEFAULT_ZOOM_FACTOR) {
     region <- browser$state$current_region
     if (is.null(region)) {
         return(browser)
@@ -48,7 +48,7 @@ browser_zoom_out <- function(browser, factor = 2) {
 #' @param fraction Fraction of view width to move (default 0.5)
 #' @return Updated browser object
 #' @export
-browser_move_left <- function(browser, fraction = 0.5) {
+browser_move_left <- function(browser, fraction = .DEFAULT_MOVE_FRACTION) {
     region <- browser$state$current_region
     if (is.null(region)) {
         return(browser)
@@ -67,7 +67,7 @@ browser_move_left <- function(browser, fraction = 0.5) {
 #' @param fraction Fraction of view width to move (default 0.5)
 #' @return Updated browser object
 #' @export
-browser_move_right <- function(browser, fraction = 0.5) {
+browser_move_right <- function(browser, fraction = .DEFAULT_MOVE_FRACTION) {
     region <- browser$state$current_region
     if (is.null(region)) {
         return(browser)
@@ -145,7 +145,7 @@ browser_goto_gene <- function(browser, gene, span = NULL) {
     }
 
     gene_region <- gene_region[1, ]
-    span <- span %||% browser$cfg$navigator$extension %||% 1e6
+    span <- span %||% browser$cfg$navigator$extension %||% .DEFAULT_NAV_EXTENSION
     center <- interval_center(gene_region)
 
     browser$state$current_region <- make_region(

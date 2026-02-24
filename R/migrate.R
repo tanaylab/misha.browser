@@ -31,21 +31,21 @@ browser_convert_vis_config <- function(vis_config, output_file = "browser_config
         vtracks = list(),
         vlines = list(),
         plot = list(
-            iterator = 32,
-            expansion = 0,
-            theme = "bw",
-            target_points = 4000
+            iterator = .DEFAULT_ITERATOR,
+            expansion = .DEFAULT_EXPANSION,
+            theme = .DEFAULT_THEME,
+            target_points = .DEFAULT_TARGET_POINTS
         ),
         ui = list(
-            title = vis_config$title %||% "Genome Browser",
-            span_default = 2e6,
-            smooth_window_default = 10,
+            title = vis_config$title %||% .DEFAULT_TITLE,
+            span_default = .DEFAULT_SPAN,
+            smooth_window_default = .DEFAULT_SMOOTH_WINDOW,
             show_coordinates = TRUE
         ),
         navigator = list(
-            source = "intervs.global.tss",
-            label_field = "geneSymbol",
-            extension = 1e6
+            source = .DEFAULT_NAV_SOURCE,
+            label_field = .DEFAULT_NAV_LABEL_FIELD,
+            extension = .DEFAULT_NAV_EXTENSION
         ),
         start = list()
     )
@@ -74,7 +74,6 @@ browser_convert_vis_config <- function(vis_config, output_file = "browser_config
 
     # Convert display_defaults to colors if present
     display_defaults <- vis_config$display_defaults %||% list()
-    # (misha.vis uses different structure, this is a best-effort conversion)
 
     # Save config
     yaml::write_yaml(new_config, output_file)
@@ -100,7 +99,7 @@ convert_vis_element <- function(elem) {
             type = "data",
             tracks = c(elem$track),
             plot_type = convert_plot_type(elem$plot_type),
-            height = elem$height %||% 2,
+            height = elem$height %||% .DEFAULT_DATA_PANEL_HEIGHT,
             transforms = list()
         )
 
@@ -123,14 +122,14 @@ convert_vis_element <- function(elem) {
             exon_source = "intervs.global.exon",
             tss_source = "intervs.global.tss",
             gene_label_field = "geneSymbol",
-            height = elem$height %||% 1
+            height = elem$height %||% .DEFAULT_ANNOTATION_HEIGHT
         )
         result$panel <- panel
     } else if (elem_type == "ideogram") {
         panel <- list(
             name = elem$name %||% "ideogram",
             type = "ideogram",
-            height = elem$height %||% 0.3
+            height = elem$height %||% .DEFAULT_IDEOGRAM_HEIGHT
         )
         result$panel <- panel
     }

@@ -38,8 +38,8 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
 
     # Get extraction mode: "fixed" (default), "dynamic", or "dynamic_smooth"
     extraction_mode <- browser$cfg$plot$extraction_mode %||% "fixed"
-    base_iter <- browser$cfg$plot$iterator %||% 32
-    target_points <- browser$cfg$plot$target_points %||% 4000
+    base_iter <- browser$cfg$plot$iterator %||% .DEFAULT_ITERATOR
+    target_points <- browser$cfg$plot$target_points %||% .DEFAULT_TARGET_POINTS
 
     # Track vtracks that need iterator restoration
     modified_vtracks <- character(0)
@@ -58,7 +58,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
         # Calculate smoothing window (from state or config)
         smoothing_bp <- browser$state$smooth_window %||%
             browser$cfg$plot$smoothing_bp %||%
-            3200
+            .DEFAULT_SMOOTHING_BP
         half_shift <- as.integer(round(smoothing_bp / 2))
 
         # Set vtrack iterators for smoothing
@@ -104,7 +104,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     # Generate cache key (include mode to avoid cache conflicts)
     # For dynamic_smooth, include smoothing_bp in key
     smoothing_key <- if (extraction_mode == "dynamic_smooth") {
-        browser$state$smooth_window %||% browser$cfg$plot$smoothing_bp %||% 3200
+        browser$state$smooth_window %||% browser$cfg$plot$smoothing_bp %||% .DEFAULT_SMOOTHING_BP
     } else {
         browser$state$smooth_window
     }
@@ -313,7 +313,7 @@ cleanup_temp_vtracks <- function(vtracks) {
 #' @param colnames Column names for the result (defaults to tracks)
 #' @return Data frame with extracted data
 #' @keywords internal
-extract_tracks <- function(tracks, region, iterator = 32, colnames = NULL) {
+extract_tracks <- function(tracks, region, iterator = .DEFAULT_ITERATOR, colnames = NULL) {
     if (length(tracks) == 0) {
         return(NULL)
     }
@@ -574,14 +574,14 @@ extract_annotation_data <- function(panel, region) {
     # Compute gene metadata from exons
     if (!is.null(result$exons)) {
         if (label_field %in% names(result$exons)) {
-            result$genes <- result$exons %>%
-                dplyr::group_by(.data[[label_field]]) %>%
+            result$genes <- result$exons |>
+                dplyr::group_by(.data[[label_field]]) |>
                 dplyr::summarise(
                     min_start = min(start),
                     max_end = max(end),
                     strand = dplyr::first(strand),
                     .groups = "drop"
-                ) %>%
+                ) |>
                 dplyr::arrange(min_start)
         }
     }

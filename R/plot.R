@@ -246,6 +246,6 @@ add_highlight_overlay <- function(p, highlight) {
         "rect",
         xmin = xmin, xmax = xmax,
         ymin = -Inf, ymax = Inf,
-        fill = "gold", alpha = 0.15
+        fill = "gold", alpha = .HIGHLIGHT_ALPHA
     )
 }

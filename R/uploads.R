@@ -196,8 +196,7 @@ parse_bed_file <- function(file_path) {
         stringsAsFactors = FALSE
     )
 
-    # BED is 0-based, half-open - convert to 1-based for misha if needed
-    # Actually misha uses 0-based coordinates, so keep as-is
+    # BED is 0-based half-open, matching misha's coordinate system
     result
 }
 

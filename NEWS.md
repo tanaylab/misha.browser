@@ -1,0 +1,42 @@
+# misha.browser 0.1.0
+
+## Initial Release
+
+### Core Features
+* YAML-based genome browser configuration with profile support
+* Interactive Shiny application for genome exploration
+* ggplot2/patchwork-based multi-panel genome visualization
+* Support for data, annotation, intervals, and ideogram panel types
+* Virtual track (vtrack) system with configurable extraction functions
+* Transform pipeline: smooth, log2, log10, sqrt, zscore, minmax, clip, quantile, and custom expressions
+* Faceting and grouping by track metadata (e.g., source/mark)
+* Vertical line overlays from files, misha tracks, or inline coordinates
+* Horizontal reference lines (fixed y-value or statistical summaries)
+* Color management with named palettes, auto-generation, and suffix fallbacks
+
+### Shiny Application
+* Real-time navigation: zoom, pan, go-to-gene
+* In-app configuration editor for all settings
+* Upload support for intervals (BED/TSV) and PSSMs (TSV/MEME/JASPAR)
+* Navigator dropdown for region selection from interval sets
+* Smooth window slider with live updates
+* Download current plot as PNG
+* Region highlight overlay
+
+### Performance
+* Two-tier LRU cache (memory + optional disk)
+* Three extraction modes: fixed, dynamic, and dynamic_smooth
+* Optional parallel panel extraction via `future`/`promises`
+
+### Deployment
+* `browser_deploy_local()` for Shiny Server deployment
+* `browser_convert_vis_config()` for migration from misha.vis
+* Multi-platform CI/CD via GitHub Actions (R-CMD-check on 5 platforms)
+* pkgdown documentation site
+
+### Programmatic API
+* `browser_create()`, `browser_plot()`, `browser_run()`, `browser_launch()`
+* `browser_add_panel()`, `browser_set_tracks()`, `browser_set_ylim()`
+* `browser_zoom_in()`, `browser_zoom_out()`, `browser_move_left()`, `browser_move_right()`
+* `browser_set_region()`, `browser_get_region()`, `browser_goto_gene()`
+* `browser_load_config()`, `browser_save_config()`, `browser_create_config()`

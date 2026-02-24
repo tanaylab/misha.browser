@@ -18,13 +18,12 @@
 #' # Or specify port
 #' browser_run(browser, port = 8080)
 #' }
-browser_run <- function(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE) {
+browser_run <- function(browser, port = .DEFAULT_PORT, host = .DEFAULT_HOST, launch.browser = TRUE) {
     if (!inherits(browser, "browser")) {
         cli::cli_abort("browser_run requires a browser object created with browser_create()")
     }
 
-    # Set max upload size to 100MB (default is 5MB)
-    options(shiny.maxRequestSize = 100 * 1024^2)
+    options(shiny.maxRequestSize = .DEFAULT_MAX_UPLOAD_BYTES)
 
     # Create UI and server
     profile <- getOption("misha.browser.profile", FALSE)
@@ -104,7 +103,7 @@ browser_run <- function(browser, port = 8911, host = "0.0.0.0", launch.browser =
 #' # With profiling enabled
 #' browser_launch("my_browser.yaml", profiling = TRUE)
 #' }
-browser_launch <- function(config, port = 8911, host = "0.0.0.0", profile = NULL,
+browser_launch <- function(config, port = .DEFAULT_PORT, host = .DEFAULT_HOST, profile = NULL,
                            profiling = FALSE, disk_cache = FALSE, cache_dir = NULL) {
     # Set options
     if (profiling) {

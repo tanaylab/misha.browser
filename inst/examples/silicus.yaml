@@ -1,11 +1,10 @@
 # Silicus Genome Browser Configuration
-# Equivalent to ~/src/borzoi_finetune/analysis/config/silicus.yaml
 
 profiles:
   local:
-    base_dir: "/home/aviezerl/src/borzoi_finetune"
+    base_dir: "<your-project-dir>"
     data_dir: "data"
-    misha_root: /home/aviezerl/mm10
+    misha_root: "<your-misha-root>"
   server:
     misha_root: /misha_dbs/mm10/trackdb/
 
@@ -30,10 +29,8 @@ plot:
 
 # Navigator for gene selection
 navigator:
-  source: /home/aviezerl/src/borzoi_finetune/data/mm10_cgdom.csv
+  source: ./mm10_cgdom.csv
   label_field: tss_gene
-  # source: intervs.global.tss
-  # label_field: geneSymbol
   extension: 1000000
 
 # Color definitions
@@ -249,10 +246,6 @@ panels:
         color: black
         linetype: solid
         label: "6.0 line"
-      # - stat: mean
-      #   color: blue
-      #   linetype: dashed
-      #   label: "Mean"
 
   # ATAC-seq panel
   - name: atac
@@ -301,24 +294,6 @@ panels:
     y_title: "CpG cont."
     height: 0.8
     show_legend: false
-
-  # # Repeat masker intervals
-  # - name: repeats
-  #   type: intervals
-  #   intervals: intervs.global.rmsk
-  #   color_by: class
-  #   filter_field: class
-  #   filter_values: [LINE, LTR]
-
-
-  # # Ideogram panel
-  # - name: ideogram
-  #   type: ideogram
-  #   cytoband_track: intervs.global.cytoband
-  #   highlight_current: true
-  #   height: 0.3
-
-
 
 # Vertical lines
 vlines:

@@ -159,7 +159,7 @@ sanitize_interval <- function(interval) {
 #' @param target_points Target number of points (default 4000)
 #' @return Calculated iterator value
 #' @keywords internal
-calc_iterator <- function(span, base_iter = 32, target_points = 4000) {
+calc_iterator <- function(span, base_iter = .DEFAULT_ITERATOR, target_points = .DEFAULT_TARGET_POINTS) {
     max(base_iter, ceiling(span / target_points))
 }
 

@@ -139,21 +139,21 @@ validate_config <- function(cfg) {
     cfg$start <- cfg$start %||% list()
 
     # Fill in defaults for plot settings
-    cfg$plot$iterator <- cfg$plot$iterator %||% 32
-    cfg$plot$expansion <- cfg$plot$expansion %||% 0
-    cfg$plot$theme <- cfg$plot$theme %||% "bw"
-    cfg$plot$target_points <- cfg$plot$target_points %||% 4000
+    cfg$plot$iterator <- cfg$plot$iterator %||% .DEFAULT_ITERATOR
+    cfg$plot$expansion <- cfg$plot$expansion %||% .DEFAULT_EXPANSION
+    cfg$plot$theme <- cfg$plot$theme %||% .DEFAULT_THEME
+    cfg$plot$target_points <- cfg$plot$target_points %||% .DEFAULT_TARGET_POINTS
 
     # Fill in defaults for UI settings
-    cfg$ui$title <- cfg$ui$title %||% "Genome Browser"
-    cfg$ui$span_default <- cfg$ui$span_default %||% 2e6
-    cfg$ui$smooth_window_default <- cfg$ui$smooth_window_default %||% 10
+    cfg$ui$title <- cfg$ui$title %||% .DEFAULT_TITLE
+    cfg$ui$span_default <- cfg$ui$span_default %||% .DEFAULT_SPAN
+    cfg$ui$smooth_window_default <- cfg$ui$smooth_window_default %||% .DEFAULT_SMOOTH_WINDOW
     cfg$ui$show_coordinates <- cfg$ui$show_coordinates %||% TRUE
 
     # Fill in defaults for navigator
-    cfg$navigator$source <- cfg$navigator$source %||% "intervs.global.tss"
-    cfg$navigator$label_field <- cfg$navigator$label_field %||% "geneSymbol"
-    cfg$navigator$extension <- cfg$navigator$extension %||% 1e6
+    cfg$navigator$source <- cfg$navigator$source %||% .DEFAULT_NAV_SOURCE
+    cfg$navigator$label_field <- cfg$navigator$label_field %||% .DEFAULT_NAV_LABEL_FIELD
+    cfg$navigator$extension <- cfg$navigator$extension %||% .DEFAULT_NAV_EXTENSION
 
     # Validate panels
     cfg$panels <- lapply(seq_along(cfg$panels), function(i) {
@@ -197,7 +197,7 @@ validate_panel <- function(panel, index) {
 
         # Fill in grouping defaults
         if (!is.null(panel$grouping)) {
-            panel$grouping$pattern <- panel$grouping$pattern %||% "^(?<source>.+)\\.(?<mark>.+)$"
+            panel$grouping$pattern <- panel$grouping$pattern %||% .DEFAULT_GROUPING_PATTERN
             panel$grouping$color_by <- panel$grouping$color_by %||% "source"
         }
 
@@ -208,9 +208,9 @@ validate_panel <- function(panel, index) {
 
         # Fill in display defaults
         panel$plot_type <- panel$plot_type %||% "line"
-        panel$alpha <- panel$alpha %||% 0.8
-        panel$linewidth <- panel$linewidth %||% 0.7
-        panel$height <- panel$height %||% 2
+        panel$alpha <- panel$alpha %||% .DEFAULT_ALPHA
+        panel$linewidth <- panel$linewidth %||% .DEFAULT_LINEWIDTH
+        panel$height <- panel$height %||% .DEFAULT_DATA_PANEL_HEIGHT
         panel$show_legend <- panel$show_legend %||% TRUE
 
         # Transforms default to empty list
@@ -230,17 +230,17 @@ validate_panel <- function(panel, index) {
         panel$gene_label_field <- panel$gene_label_field %||% "geneSymbol"
         panel$color <- panel$color %||% "navy"
         panel$show_strand_arrows <- panel$show_strand_arrows %||% TRUE
-        panel$height <- panel$height %||% 1
+        panel$height <- panel$height %||% .DEFAULT_ANNOTATION_HEIGHT
     } else if (panel$type == "intervals") {
         panel$source <- panel$source %||% "intervals"
         panel$intervals <- panel$intervals %||% panel$source
         panel$color <- panel$color %||% "grey60"
         panel$outline_color <- panel$outline_color %||% "grey20"
-        panel$height <- panel$height %||% 1
+        panel$height <- panel$height %||% .DEFAULT_INTERVALS_HEIGHT
         panel$show_labels <- panel$show_labels %||% FALSE
     } else if (panel$type == "ideogram") {
         panel$highlight_current <- panel$highlight_current %||% TRUE
-        panel$height <- panel$height %||% 0.3
+        panel$height <- panel$height %||% .DEFAULT_IDEOGRAM_HEIGHT
     }
 
     # Pre-compute cache signature for data panels (avoids repeated digest calls)
@@ -307,7 +307,7 @@ validate_hline <- function(hline, index, panel_name = "unknown") {
     # Set defaults
     hline$color <- hline$color %||% "grey50"
     hline$linetype <- hline$linetype %||% "dashed"
-    hline$linewidth <- hline$linewidth %||% 0.5
+    hline$linewidth <- hline$linewidth %||% .DEFAULT_HLINE_LINEWIDTH
 
     hline
 }
@@ -434,21 +434,21 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
         vtracks = list(),
         vlines = list(),
         plot = list(
-            iterator = 32,
-            expansion = 0,
-            theme = "bw",
-            target_points = 4000
+            iterator = .DEFAULT_ITERATOR,
+            expansion = .DEFAULT_EXPANSION,
+            theme = .DEFAULT_THEME,
+            target_points = .DEFAULT_TARGET_POINTS
         ),
         ui = list(
             title = title,
-            span_default = 2e6,
-            smooth_window_default = 10,
+            span_default = .DEFAULT_SPAN,
+            smooth_window_default = .DEFAULT_SMOOTH_WINDOW,
             show_coordinates = TRUE
         ),
         navigator = list(
-            source = "intervs.global.tss",
-            label_field = "geneSymbol",
-            extension = 1e6
+            source = .DEFAULT_NAV_SOURCE,
+            label_field = .DEFAULT_NAV_LABEL_FIELD,
+            extension = .DEFAULT_NAV_EXTENSION
         ),
         start = list()
     )

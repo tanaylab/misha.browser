@@ -5,6 +5,9 @@ Authors@R: c(
     person("Aviezer", "Lifshitz", email = "aviezer.lifshitz@weizmann.ac.il", role = c("aut", "cre")), 
     person("Weizmann Institute of Science", role="cph")
     )
+Author: Aviezer Lifshitz [aut, cre],
+    Weizmann Institute of Science [cph]
+Maintainer: Aviezer Lifshitz <aviezer.lifshitz@weizmann.ac.il>
 Description: A configurable, interactive genome browser built on ggplot2 and
     patchwork. Provides YAML-based configuration for visualization of misha
     genomic tracks with support for custom transformations, faceting, vertical
@@ -16,7 +19,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
     misha,
-    magrittr,
     ggplot2 (>= 3.4.0),
     patchwork,
     data.table,

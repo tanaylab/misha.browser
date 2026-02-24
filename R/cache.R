@@ -152,8 +152,8 @@ cache_exists <- function(key) {
 #' @param max_bytes Maximum total bytes to keep (default: 500MB)
 #' @return Invisibly returns number of entries pruned
 #' @keywords internal
-cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries", 100),
-                        max_bytes = getOption("misha.browser.cache_max_bytes", 500e6)) {
+cache_prune <- function(max_entries = getOption("misha.browser.cache_max_entries", .DEFAULT_CACHE_MAX_ENTRIES),
+                        max_bytes = getOption("misha.browser.cache_max_bytes", .DEFAULT_CACHE_MAX_BYTES)) {
     keys <- ls(.browser_cache)
     n_entries <- length(keys)
 

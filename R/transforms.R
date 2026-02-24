@@ -100,7 +100,7 @@ apply_single_transform <- function(x, pos = NULL, type, params) {
 #' @return Smoothed vector
 #' @keywords internal
 transform_smooth <- function(x, params) {
-    window <- as.numeric(params$window %||% 10)
+    window <- as.numeric(params$window %||% .DEFAULT_SMOOTH_WINDOW)
     align <- params$align %||% "center"
     if (!is.finite(window)) {
         return(x)
@@ -230,15 +230,87 @@ transform_quantile <- function(x, params) {
     pmin(pmax(x, q[1]), q[2])
 }
 
+#' Safe environment for expression evaluation
+#'
+#' Contains only whitelisted math/vector functions. No file I/O, no system
+#' calls, no environment access. This is created once and reused.
+#'
+#' @keywords internal
+.expr_safe_env <- local({
+    safe <- new.env(parent = emptyenv())
+    # Arithmetic and math
+    safe[["+"]] <- base::`+`
+    safe[["-"]] <- base::`-`
+    safe[["*"]] <- base::`*`
+    safe[["/"]] <- base::`/`
+    safe[["^"]] <- base::`^`
+    safe[["%%"]] <- base::`%%`
+    safe[["%/%"]] <- base::`%/%`
+    safe[["("]] <- base::`(`
+    # Comparison
+    safe[[">"]] <- base::`>`
+    safe[["<"]] <- base::`<`
+    safe[[">="]] <- base::`>=`
+    safe[["<="]] <- base::`<=`
+    safe[["=="]] <- base::`==`
+    safe[["!="]] <- base::`!=`
+    # Logic
+    safe[["&"]] <- base::`&`
+    safe[["|"]] <- base::`|`
+    safe[["!"]] <- base::`!`
+    safe[["ifelse"]] <- base::ifelse
+    # Math functions
+    safe[["abs"]] <- base::abs
+    safe[["sqrt"]] <- base::sqrt
+    safe[["exp"]] <- base::exp
+    safe[["log"]] <- base::log
+    safe[["log2"]] <- base::log2
+    safe[["log10"]] <- base::log10
+    safe[["ceiling"]] <- base::ceiling
+    safe[["floor"]] <- base::floor
+    safe[["round"]] <- base::round
+    safe[["sign"]] <- base::sign
+    # Vector functions
+    safe[["min"]] <- base::min
+    safe[["max"]] <- base::max
+    safe[["sum"]] <- base::sum
+    safe[["mean"]] <- base::mean
+    safe[["length"]] <- base::length
+    safe[["pmin"]] <- base::pmin
+    safe[["pmax"]] <- base::pmax
+    safe[["cumsum"]] <- base::cumsum
+    safe[["cummax"]] <- base::cummax
+    safe[["cummin"]] <- base::cummin
+    safe[["diff"]] <- base::diff
+    safe[["rev"]] <- base::rev
+    safe[["seq_along"]] <- base::seq_along
+    safe[["seq_len"]] <- base::seq_len
+    # Type checking / coercion
+    safe[["is.na"]] <- base::is.na
+    safe[["is.finite"]] <- base::is.finite
+    safe[["as.numeric"]] <- base::as.numeric
+    safe[["c"]] <- base::c
+    safe[["rep"]] <- base::rep
+    # Constants
+    safe[["TRUE"]] <- TRUE
+    safe[["FALSE"]] <- FALSE
+    safe[["NA"]] <- NA
+    safe[["NA_real_"]] <- NA_real_
+    safe[["Inf"]] <- Inf
+    safe[["pi"]] <- pi
+    safe
+})
+
 #' Custom expression transform
 #'
 #' Evaluates a custom R expression on the data. The expression has access to
 #' variables `x` (the data vector) and `pos` (position vector).
 #'
-#' @section Security Note:
-#' This function evaluates arbitrary R expressions from configuration files.
-#' While the evaluation environment is restricted to base R functions,
-#' configuration files should only be loaded from trusted sources.
+#' @section Security Warning:
+#' This function evaluates R expressions from YAML configuration files using
+#' [eval()]. The evaluation environment is restricted to a whitelist of safe
+#' math and vector functions (no file I/O, system calls, or environment access).
+#' Nevertheless, **only load configuration files from trusted sources**.
 #'
 #' @param x Numeric vector
 #' @param pos Position vector
@@ -254,12 +326,12 @@ transform_expr <- function(x, pos, params) {
 
     tryCatch(
         {
-            # Create environment with x and pos available
-            env <- new.env(parent = baseenv())
+            # Create a child of the safe whitelist env with x and pos bound
+            env <- new.env(parent = .expr_safe_env)
             env$x <- x
             env$pos <- pos
 
-            # Evaluate expression
+            # Evaluate expression in sandboxed environment
             result <- eval(parse(text = expr_str), envir = env)
 
             if (length(result) != length(x)) {
@@ -288,7 +360,7 @@ get_effective_smooth_window <- function(browser, panel) {
     # Start with panel-specific or global default
     base_window <- browser$state$smooth_window %||%
         browser$cfg$ui$smooth_window_default %||%
-        10
+        .DEFAULT_SMOOTH_WINDOW
 
     # Look for smooth transform in panel to get its window
     for (transform in panel$transforms) {
@@ -296,7 +368,7 @@ get_effective_smooth_window <- function(browser, panel) {
             # If panel has explicit window, use that as multiplier base
             if (!is.null(transform$window)) {
                 # Scale by state smooth window relative to default
-                default_window <- browser$cfg$ui$smooth_window_default %||% 10
+                default_window <- browser$cfg$ui$smooth_window_default %||% .DEFAULT_SMOOTH_WINDOW
                 scale <- base_window / default_window
                 return(ceiling(transform$window * scale))
             }
