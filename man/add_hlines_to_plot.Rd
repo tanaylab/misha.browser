@@ -4,7 +4,7 @@
 \alias{add_hlines_to_plot}
 \title{Add horizontal lines to a plot}
 \usage{
-add_hlines_to_plot(p, panel, data)
+add_hlines_to_plot(p, panel, data, browser = NULL)
 }
 \arguments{
 \item{p}{ggplot object}
@@ -12,6 +12,8 @@ add_hlines_to_plot(p, panel, data)
 \item{panel}{Panel configuration}
 
 \item{data}{Data frame with values for stat calculations}
+
+\item{browser}{Optional browser object (needed for quantile_global)}
 }
 \value{
 Updated ggplot object
