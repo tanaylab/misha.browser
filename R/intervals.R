@@ -76,13 +76,17 @@ render_intervals_panel <- function(panel, region, vlines_data = NULL) {
         p <- p + ggplot2::scale_y_continuous(limits = c(0.5, y_max))
     }
 
+    y_title <- panel$y_title %||% ""
+
     p <- p +
         ggplot2::scale_x_continuous(expand = c(0, 0), limits = x_limits) +
         ggplot2::coord_cartesian(xlim = x_limits, expand = FALSE) +
         ggplot2::theme_void() +
         ggplot2::theme(
-            plot.margin = ggplot2::margin(b = 2, t = 5)
-        )
+            plot.margin = ggplot2::margin(b = 2, t = 5),
+            axis.title.y = if (nchar(y_title) > 0) ggplot2::element_text(size = 9, angle = 90) else ggplot2::element_blank()
+        ) +
+        ggplot2::labs(y = y_title)
 
     p
 }

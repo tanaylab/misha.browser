@@ -1,5 +1,8 @@
 # panels.R - Panel rendering for misha.browser
 
+# Cache for genome-wide quantile computations (persists across renders)
+.global_quantile_cache <- new.env(parent = emptyenv())
+
 #' Render a data panel
 #'
 #' @param browser Browser object
@@ -62,7 +65,7 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     }
 
     # Add horizontal lines (after faceting so stats apply per facet)
-    p <- add_hlines_to_plot(p, panel, data)
+    p <- add_hlines_to_plot(p, panel, data, browser = browser)
 
     # Apply color scale only if color mapping is used (not for area plots with fixed colors)
     plot_type <- panel$plot_type %||% "line"
@@ -306,9 +309,10 @@ add_vlines_to_plot <- function(p, vlines_data, x_limits) {
 #' @param p ggplot object
 #' @param panel Panel configuration
 #' @param data Data frame with values for stat calculations
+#' @param browser Optional browser object (needed for quantile_global)
 #' @return Updated ggplot object
 #' @keywords internal
-add_hlines_to_plot <- function(p, panel, data) {
+add_hlines_to_plot <- function(p, panel, data, browser = NULL) {
     hlines <- panel$hlines
     if (is.null(hlines) || length(hlines) == 0) {
         return(p)
@@ -322,11 +326,14 @@ add_hlines_to_plot <- function(p, panel, data) {
             y_pos <- switch(hline$stat,
                 "mean" = mean(data$value, na.rm = TRUE),
                 "median" = median(data$value, na.rm = TRUE),
-                "quantile" = quantile(data$value, hline$q, na.rm = TRUE)
+                "quantile" = quantile(data$value, hline$q, na.rm = TRUE),
+                "quantile_global" = compute_global_quantile(browser, panel, hline)
             )
         } else {
             next # Skip if neither y nor stat specified
         }
+
+        if (is.null(y_pos) || is.na(y_pos)) next
 
         # Add the line
         p <- p + ggplot2::geom_hline(
@@ -349,4 +356,96 @@ add_hlines_to_plot <- function(p, panel, data) {
     }
 
     p
+}
+
+#' Compute a genome-wide quantile for a track
+#'
+#' Extracts the specified track across the full genome, applies the panel's
+#' transforms, and computes the requested quantile. Results are cached so
+#' the expensive extraction only happens once per track/transform/quantile
+#' combination.
+#'
+#' @param browser Browser object
+#' @param panel Panel configuration (used for transforms)
+#' @param hline Hline configuration with `q` and optional `track` fields
+#' @return Numeric quantile value, or NA on failure
+#' @keywords internal
+compute_global_quantile <- function(browser, panel, hline) {
+    if (is.null(browser)) {
+        cli::cli_warn("quantile_global requires browser object; falling back to NA")
+        return(NA_real_)
+    }
+
+    q <- hline$q %||% 0.5
+    track_name <- hline$track %||% panel$tracks[[1]]
+
+    # Build cache key from track config + transforms + quantile
+    transform_sig <- digest::digest(panel$transforms)
+    cache_key <- paste0("gq_", track_name, "_", transform_sig, "_", q)
+
+    if (exists(cache_key, envir = .global_quantile_cache)) {
+        return(get(cache_key, envir = .global_quantile_cache))
+    }
+
+    cli::cli_text("Computing genome-wide quantile (q={q}) for track {track_name}...")
+
+    result <- tryCatch(
+        {
+            # Find the vtrack config for this track
+            vt_cfg <- NULL
+            for (vt in browser$cfg$vtracks) {
+                if (vt$name == track_name) {
+                    vt_cfg <- vt
+                    break
+                }
+            }
+
+            # Resolve the track expression
+            track_specs <- resolve_track_specs(track_name, browser, browser$cfg)
+            track_expr <- track_specs$exprs
+            col_name <- track_specs$names
+            temp_vtracks <- track_specs$temp_vtracks
+            on.exit(cleanup_temp_vtracks(temp_vtracks), add = TRUE)
+
+            # Extract genome-wide
+            iterator <- browser$cfg$plot$iterator %||% .DEFAULT_ITERATOR
+            d <- extract_tracks(
+                tracks = track_expr,
+                region = misha::gintervals.all(),
+                iterator = iterator,
+                colnames = col_name
+            )
+
+            if (is.null(d) || nrow(d) == 0) {
+                return(NA_real_)
+            }
+
+            # Apply transforms (same as panel, excluding smooth for speed)
+            transforms <- panel$transforms %||% list()
+            transforms <- Filter(function(t) t$type != "smooth", transforms)
+            if (length(transforms) > 0) {
+                d <- apply_transforms(d, transforms, col_name)
+            }
+
+            # Compute quantile on the track column
+            vals <- d[[col_name]]
+            vals <- vals[!is.na(vals)]
+
+            if (length(vals) == 0) {
+                return(NA_real_)
+            }
+
+            quantile(vals, q, names = FALSE)
+        },
+        error = function(e) {
+            cli::cli_warn("Failed to compute global quantile for {track_name}: {e$message}")
+            NA_real_
+        }
+    )
+
+    # Cache the result
+    assign(cache_key, result, envir = .global_quantile_cache)
+    cli::cli_text("  -> q{q} = {round(result, 4)}")
+
+    result
 }

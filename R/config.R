@@ -283,15 +283,15 @@ validate_hline <- function(hline, index, panel_name = "unknown") {
 
     # Validate stat type
     if (has_stat) {
-        valid_stats <- c("mean", "median", "quantile")
+        valid_stats <- c("mean", "median", "quantile", "quantile_global")
         if (!hline$stat %in% valid_stats) {
             cli::cli_abort(
                 "Panel '{panel_name}' hline[{index}]: stat must be one of: {paste(valid_stats, collapse=', ')}"
             )
         }
-        if (hline$stat == "quantile") {
+        if (hline$stat %in% c("quantile", "quantile_global")) {
             if (is.null(hline$q)) {
-                cli::cli_abort("Panel '{panel_name}' hline[{index}]: stat='quantile' requires 'q' parameter")
+                cli::cli_abort("Panel '{panel_name}' hline[{index}]: stat='{hline$stat}' requires 'q' parameter")
             }
             if (!is.numeric(hline$q) || hline$q < 0 || hline$q > 1) {
                 cli::cli_abort("Panel '{panel_name}' hline[{index}]: 'q' must be between 0 and 1")
