@@ -5,7 +5,7 @@ Add horizontal lines to a plot
 ## Usage
 
 ``` r
-add_hlines_to_plot(p, panel, data)
+add_hlines_to_plot(p, panel, data, browser = NULL)
 ```
 
 ## Arguments
@@ -21,6 +21,10 @@ add_hlines_to_plot(p, panel, data)
 - data:
 
   Data frame with values for stat calculations
+
+- browser:
+
+  Optional browser object (needed for quantile_global)
 
 ## Value
 
