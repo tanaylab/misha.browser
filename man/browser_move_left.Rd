@@ -4,7 +4,7 @@
 \alias{browser_move_left}
 \title{Move view left}
 \usage{
-browser_move_left(browser, fraction = 0.5)
+browser_move_left(browser, fraction = .DEFAULT_MOVE_FRACTION)
 }
 \arguments{
 \item{browser}{Browser object}

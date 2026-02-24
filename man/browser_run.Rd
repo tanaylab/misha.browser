@@ -4,7 +4,12 @@
 \alias{browser_run}
 \title{Run the interactive genome browser}
 \usage{
-browser_run(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE)
+browser_run(
+  browser,
+  port = .DEFAULT_PORT,
+  host = .DEFAULT_HOST,
+  launch.browser = TRUE
+)
 }
 \arguments{
 \item{browser}{Browser object (created with browser_create)}

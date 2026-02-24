@@ -6,8 +6,8 @@
 \usage{
 browser_launch(
   config,
-  port = 8911,
-  host = "0.0.0.0",
+  port = .DEFAULT_PORT,
+  host = .DEFAULT_HOST,
   profile = NULL,
   profiling = FALSE,
   disk_cache = FALSE,

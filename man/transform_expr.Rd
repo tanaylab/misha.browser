@@ -20,11 +20,12 @@ Transformed vector
 Evaluates a custom R expression on the data. The expression has access to
 variables \code{x} (the data vector) and \code{pos} (position vector).
 }
-\section{Security Note}{
+\section{Security Warning}{
 
-This function evaluates arbitrary R expressions from configuration files.
-While the evaluation environment is restricted to base R functions,
-configuration files should only be loaded from trusted sources.
+This function evaluates R expressions from YAML configuration files using
+\code{\link[=eval]{eval()}}. The evaluation environment is restricted to a whitelist of safe
+math and vector functions (no file I/O, system calls, or environment access).
+Nevertheless, \strong{only load configuration files from trusted sources}.
 }
 
 \keyword{internal}

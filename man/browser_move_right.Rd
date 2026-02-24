@@ -4,7 +4,7 @@
 \alias{browser_move_right}
 \title{Move view right}
 \usage{
-browser_move_right(browser, fraction = 0.5)
+browser_move_right(browser, fraction = .DEFAULT_MOVE_FRACTION)
 }
 \arguments{
 \item{browser}{Browser object}

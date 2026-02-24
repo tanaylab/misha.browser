@@ -4,7 +4,7 @@
 \alias{browser_zoom_out}
 \title{Zoom out from current region}
 \usage{
-browser_zoom_out(browser, factor = 2)
+browser_zoom_out(browser, factor = .DEFAULT_ZOOM_FACTOR)
 }
 \arguments{
 \item{browser}{Browser object}

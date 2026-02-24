@@ -5,8 +5,8 @@
 \title{Prune cache to stay within limits (LRU eviction)}
 \usage{
 cache_prune(
-  max_entries = getOption("misha.browser.cache_max_entries", 100),
-  max_bytes = getOption("misha.browser.cache_max_bytes", 5e+08)
+  max_entries = getOption("misha.browser.cache_max_entries", .DEFAULT_CACHE_MAX_ENTRIES),
+  max_bytes = getOption("misha.browser.cache_max_bytes", .DEFAULT_CACHE_MAX_BYTES)
 )
 }
 \arguments{

@@ -4,7 +4,7 @@
 \alias{extract_tracks}
 \title{Extract tracks from misha}
 \usage{
-extract_tracks(tracks, region, iterator = 32, colnames = NULL)
+extract_tracks(tracks, region, iterator = .DEFAULT_ITERATOR, colnames = NULL)
 }
 \arguments{
 \item{tracks}{Character vector of track names/expressions}

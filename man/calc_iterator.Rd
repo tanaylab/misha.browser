@@ -4,7 +4,11 @@
 \alias{calc_iterator}
 \title{Calculate dynamic iterator based on span}
 \usage{
-calc_iterator(span, base_iter = 32, target_points = 4000)
+calc_iterator(
+  span,
+  base_iter = .DEFAULT_ITERATOR,
+  target_points = .DEFAULT_TARGET_POINTS
+)
 }
 \arguments{
 \item{span}{Viewing span in bp}
