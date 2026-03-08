@@ -1,3 +1,8 @@
 .claude/
-dev/
 docs
+.a5c/
+tests/testthat/screenshots/
+benchmarks/results/
+dev/startup_baseline.json
+dev/page_load_baseline.json
+dev/profile_page_loads.log

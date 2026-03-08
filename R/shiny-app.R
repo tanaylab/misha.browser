@@ -72,15 +72,8 @@ browser_run <- function(browser, port = .DEFAULT_PORT, host = .DEFAULT_HOST, lau
     }
 
     # Launch app
-    shiny::shinyApp(
-        ui = ui,
-        server = server,
-        options = list(
-            host = host,
-            port = port,
-            launch.browser = launch.browser
-        )
-    )
+    app <- shiny::shinyApp(ui = ui, server = server)
+    shiny::runApp(app, host = host, port = port, launch.browser = launch.browser)
 }
 
 #' Quick launch browser from config file
