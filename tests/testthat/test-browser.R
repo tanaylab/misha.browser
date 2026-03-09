@@ -231,3 +231,69 @@ test_that("cleanup_temp_vtracks handles empty list", {
     expect_no_error(cleanup_temp_vtracks(character(0)))
     expect_no_error(cleanup_temp_vtracks(NULL))
 })
+
+# --- browser_add_vtrack tests ---
+
+test_that("browser_add_vtrack adds standard vtrack", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("my_vt", src = "some.track", func = "avg")
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_true("my_vt" %in% vt_names)
+
+    vt <- browser$cfg$vtracks[[which(vt_names == "my_vt")]]
+    expect_equal(vt$src, "some.track")
+    expect_equal(vt$func, "avg")
+})
+
+test_that("browser_add_vtrack adds expression vtrack", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)")
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_true("ctcf_log2" %in% vt_names)
+
+    vt <- browser$cfg$vtracks[[which(vt_names == "ctcf_log2")]]
+    expect_equal(vt$vtype, "expr")
+    expect_equal(vt$expr, "log2(1 + chipseq.ctcf)")
+})
+
+test_that("browser_add_vtrack supports pipe chaining with browser_add_panel", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("vt1", expr = "log2(1 + track1)") %>%
+        browser_add_vtrack("vt2", src = "track2", func = "sum") %>%
+        browser_add_panel(name = "signal", tracks = c("vt1", "vt2"))
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_true(all(c("vt1", "vt2") %in% vt_names))
+    expect_length(browser$cfg$panels, 1)
+})
+
+test_that("browser_add_vtrack replaces duplicate vtrack names", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("my_vt", src = "track1", func = "avg") %>%
+        browser_add_vtrack("my_vt", src = "track2", func = "sum")
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    expect_equal(sum(vt_names == "my_vt"), 1)
+
+    vt <- browser$cfg$vtracks[[which(vt_names == "my_vt")]]
+    expect_equal(vt$src, "track2")
+    expect_equal(vt$func, "sum")
+})
+
+test_that("browser_add_vtrack errors when neither src nor expr provided", {
+    browser <- browser_create()
+    expect_error(browser_add_vtrack(browser, "bad_vt"), "src.*expr")
+})
+
+test_that("browser_add_vtrack stores shift and dim parameters", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("shifted", src = "track", func = "sum",
+                          sshift = -500, eshift = 500)
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    vt <- browser$cfg$vtracks[[which(vt_names == "shifted")]]
+    expect_equal(vt$sshift, -500)
+    expect_equal(vt$eshift, 500)
+})

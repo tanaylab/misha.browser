@@ -3,6 +3,7 @@
 S3method(print,browser)
 export(browser_add_panel)
 export(browser_add_transform)
+export(browser_add_vtrack)
 export(browser_add_vlines)
 export(browser_cache_config)
 export(browser_clear_cache)

@@ -454,6 +454,72 @@ browser_add_panel <- function(browser, name, tracks = NULL,
     browser
 }
 
+#' Add a virtual track to the browser
+#'
+#' Adds a virtual track definition to the browser configuration. Supports
+#' standard vtracks (with a source track and aggregation function) and
+#' expression vtracks (computed from a track expression).
+#'
+#' @param browser Browser object
+#' @param name Name for the virtual track
+#' @param src Source track name (for standard vtracks)
+#' @param func Aggregation function (default "avg"). Common values: "avg", "sum", "min", "max"
+#' @param vtype Vtrack type: "standard", "expr", "sequence", "intervals". Auto-detected if NULL.
+#' @param expr Track expression string (for expression vtracks, e.g. "log2(1 + trackname)")
+#' @param expression Optional expression wrapping the vtrack name (e.g. "pmax(vtrack_name, 0)")
+#' @param sshift Start shift in bp
+#' @param eshift End shift in bp
+#' @param dim Dimension for 2D tracks
+#' @param ... Additional vtrack parameters
+#' @return Updated browser object
+#' @export
+#' @examples
+#' \dontrun{
+#' browser <- browser_create() %>%
+#'     browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)") %>%
+#'     browser_add_vtrack("my_signal", src = "some.track", func = "avg") %>%
+#'     browser_add_panel(name = "signal", tracks = c("ctcf_log2", "my_signal"))
+#' }
+browser_add_vtrack <- function(browser, name, src = NULL, func = "avg",
+                               vtype = NULL, expr = NULL, expression = NULL,
+                               sshift = NULL, eshift = NULL, dim = NULL, ...) {
+    if (is.null(src) && is.null(expr)) {
+        cli::cli_abort("Either {.arg src} or {.arg expr} must be provided")
+    }
+
+    if (!is.null(expr)) {
+        vtrack <- list(name = name, vtype = "expr", expr = expr)
+    } else {
+        vtrack <- list(name = name, src = src, func = func)
+        if (!is.null(vtype)) vtrack$vtype <- vtype
+        if (!is.null(expression)) vtrack$expression <- expression
+        if (!is.null(sshift)) vtrack$sshift <- sshift
+        if (!is.null(eshift)) vtrack$eshift <- eshift
+        if (!is.null(dim)) vtrack$dim <- dim
+    }
+
+    # Store any extra parameters
+    extra <- list(...)
+    for (opt in names(extra)) {
+        vtrack[[opt]] <- extra[[opt]]
+    }
+
+    # Check for duplicate vtrack names and replace if found
+    existing_names <- vapply(
+        browser$cfg$vtracks %||% list(),
+        function(v) v$name,
+        character(1)
+    )
+    idx <- match(name, existing_names)
+    if (!is.na(idx)) {
+        browser$cfg$vtracks[[idx]] <- vtrack
+    } else {
+        browser$cfg$vtracks <- c(browser$cfg$vtracks %||% list(), list(vtrack))
+    }
+
+    browser
+}
+
 #' Add a transform to a panel
 #'
 #' @param browser Browser object
