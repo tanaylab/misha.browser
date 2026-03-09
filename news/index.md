@@ -1,5 +1,14 @@
 # Changelog
 
+## misha.browser 0.1.1
+
+### New Features
+
+- Added `browser_add_vtrack()` for programmatic virtual track creation.
+  Supports standard vtracks (`src` + `func`), expression vtracks
+  (`expr`), and optional iterator parameters (`sshift`, `eshift`,
+  `dim`). Replaces existing vtracks with the same name.
+
 ## misha.browser 0.1.0
 
 ### Initial Release
