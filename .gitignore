@@ -1,8 +1,5 @@
 .claude/
 docs
 .a5c/
+CLAUDE.md
 tests/testthat/screenshots/
-benchmarks/results/
-dev/startup_baseline.json
-dev/page_load_baseline.json
-dev/profile_page_loads.log

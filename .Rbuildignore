@@ -9,7 +9,5 @@
 ^pkgdown$
 ^\.Rcheck$
 ^\.\.Rcheck$
-^CLAUDE\.md$
 ^\.a5c$
-^start_app\.R$
-^benchmarks$
+^CLAUDE\.md$
