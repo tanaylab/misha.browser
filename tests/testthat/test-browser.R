@@ -289,8 +289,10 @@ test_that("browser_add_vtrack errors when neither src nor expr provided", {
 
 test_that("browser_add_vtrack stores shift and dim parameters", {
     browser <- browser_create() %>%
-        browser_add_vtrack("shifted", src = "track", func = "sum",
-                          sshift = -500, eshift = 500)
+        browser_add_vtrack("shifted",
+            src = "track", func = "sum",
+            sshift = -500, eshift = 500
+        )
 
     vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
     vt <- browser$cfg$vtracks[[which(vt_names == "shifted")]]

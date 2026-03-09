@@ -341,7 +341,9 @@ element_exists <- function(session, selector) {
                     )
                 }
             )
-            if (is.null(result)) return(FALSE)
+            if (is.null(result)) {
+                return(FALSE)
+            }
             isTRUE(result$result$value)
         },
         error = function(e) {
@@ -385,7 +387,9 @@ get_element_text <- function(session, selector) {
                 }
             )
 
-            if (is.null(result)) return(NULL)
+            if (is.null(result)) {
+                return(NULL)
+            }
             result$result$value
         },
         error = function(e) {
