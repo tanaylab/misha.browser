@@ -344,8 +344,27 @@ print.browser <- function(x, ...) {
     # Virtual tracks
     if (length(x$cfg$vtracks) > 0) {
         cli::cli_h2("Virtual Tracks ({length(x$cfg$vtracks)})")
+        # Build vtrack -> panel name mapping (for pass-through vtracks used in panels)
+        vtrack_to_panel <- character()
+        for (panel in x$cfg$panels) {
+            if (panel$type != "data" || is.null(panel$tracks)) next
+            tracks <- if (is.list(panel$tracks)) unlist(panel$tracks) else panel$tracks
+            for (track in tracks) {
+                if (is.character(track) && nzchar(trimws(track)) &&
+                    !track %in% names(vtrack_to_panel)) {
+                    vtrack_to_panel[track] <- panel$name
+                }
+            }
+        }
         for (vt in x$cfg$vtracks) {
-            cli::cli_bullets(c("*" = "{vt$name} -> {vt$src %||% vt$expr %||% 'sequence'}"))
+            right <- vt$src %||% vt$expr %||% "sequence"
+            # Use panel name when vtrack is a pass-through (name == src) used in a panel
+            left <- if (identical(vt$name, vt$src) && vt$name %in% names(vtrack_to_panel)) {
+                vtrack_to_panel[vt$name]
+            } else {
+                vt$name
+            }
+            cli::cli_bullets(c("*" = "{left} -> {right}"))
         }
     }
 
