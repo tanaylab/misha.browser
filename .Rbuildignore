@@ -11,3 +11,5 @@
 ^\.\.Rcheck$
 ^\.a5c$
 ^CLAUDE\.md$
+^benchmarks$
+^start_app\.R$

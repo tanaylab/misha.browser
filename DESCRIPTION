@@ -43,7 +43,14 @@ Suggests:
     future,
     promises,
     knitr,
-    rmarkdown
+    rmarkdown,
+    callr,
+    chromote,
+    devtools,
+    httpuv,
+    httr,
+    jsonlite,
+    withr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Remotes: tanaylab/prego
