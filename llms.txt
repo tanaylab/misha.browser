@@ -665,6 +665,8 @@ MIT
   : Add a transform to a panel
 - [`browser_add_vlines()`](https://tanaylab.github.io/misha.browser/reference/browser_add_vlines.md)
   : Add vertical lines to the browser
+- [`browser_add_vtrack()`](https://tanaylab.github.io/misha.browser/reference/browser_add_vtrack.md)
+  : Add a virtual track to the browser
 - [`browser_cache_config()`](https://tanaylab.github.io/misha.browser/reference/browser_cache_config.md)
   : Configure disk caching
 - [`browser_clear_cache()`](https://tanaylab.github.io/misha.browser/reference/browser_clear_cache.md)
