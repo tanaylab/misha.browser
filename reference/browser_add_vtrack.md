@@ -1,8 +1,9 @@
 # Add a virtual track to the browser
 
-Adds a virtual track definition to the browser configuration. Supports
-standard vtracks (with a source track and aggregation function) and
-expression vtracks (computed from a track expression).
+Adds a virtual track definition to the browser configuration. Expression
+handling is inferred from the provided fields: if `src`/`func` are
+present, `expression` wraps the created vtrack during extraction;
+otherwise, `expression` defines a pure expression vtrack.
 
 ## Usage
 
@@ -43,18 +44,19 @@ browser_add_vtrack(
 
 - vtype:
 
-  Vtrack type: "standard", "expr", "sequence", "intervals".
-  Auto-detected if NULL.
+  Vtrack type: "standard", "expr", "sequence", "intervals". Usually
+  inferred automatically.
 
 - expr:
 
-  Track expression string (for expression vtracks, e.g. "log2(1 +
-  trackname)")
+  Deprecated alias for `expression`
 
 - expression:
 
-  Optional expression wrapping the vtrack name (e.g. "pmax(vtrack_name,
-  0)")
+  Track expression. If `src`/`func` are provided, this wraps the created
+  vtrack during extraction (e.g. `pmax(vtrack_name, 0)`). If no `src` or
+  `func` are provided, it defines a pure expression vtrack (e.g.
+  `log2(1 + trackname)`).
 
 - sshift:
 
@@ -81,7 +83,7 @@ Updated browser object
 ``` r
 if (FALSE) { # \dontrun{
 browser <- browser_create() %>%
-    browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)") %>%
+    browser_add_vtrack("ctcf_log2", expression = "log2(1 + chipseq.ctcf)") %>%
     browser_add_vtrack("my_signal", src = "some.track", func = "avg") %>%
     browser_add_panel(name = "signal", tracks = c("ctcf_log2", "my_signal"))
 } # }

@@ -326,12 +326,29 @@ and iterator shifts (<code>sshift</code>, <code>eshift</code>,
 <li>Sequence-based vtracks (no <code>src</code> required) for
 <code>kmer.*</code>, <code>pwm.*</code>, <code>masked.*</code>
 functions.</li>
-<li>Expression vtracks: <code>expr</code> evaluates a track expression
-without creating a new vtrack source.</li>
-<li>Expression wrappers: <code>expression</code> lets you wrap
-extraction with functions like <code>pmax(signal, 0)</code> while
-keeping the displayed name.</li>
+<li>Expression handling uses a single <code>expression</code> field. If
+<code>src</code>/<code>func</code> are present, it wraps the created
+vtrack during extraction. If no <code>src</code> or <code>func</code>
+are given, it defines a pure expression vtrack.</li>
 </ul>
+<p>For example, this is correct:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">browser</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/browser_create.html">browser_create</a></span><span class="op">(</span>misha_root <span class="op">=</span> <span class="va">.misha</span><span class="op">$</span><span class="va">GROOT</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu"><a href="../reference/browser_add_vtrack.html">browser_add_vtrack</a></span><span class="op">(</span></span>
+<span>    <span class="st">"chipseq_q"</span>,</span>
+<span>    src <span class="op">=</span> <span class="st">"chipseq.ctcf.LCL.hsa81.3"</span>,</span>
+<span>    func <span class="op">=</span> <span class="st">"global.percentile.max"</span>,</span>
+<span>    expression <span class="op">=</span> <span class="st">"-log2(1 - chipseq_q)"</span></span>
+<span>  <span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu"><a href="../reference/browser_add_panel.html">browser_add_panel</a></span><span class="op">(</span></span>
+<span>    name <span class="op">=</span> <span class="st">"chipseq"</span>,</span>
+<span>    tracks <span class="op">=</span> <span class="st">"chipseq_q"</span>,</span>
+<span>    plot_type <span class="op">=</span> <span class="st">"line"</span>,</span>
+<span>    height <span class="op">=</span> <span class="fl">2</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p>This creates <code>chipseq_q</code> with
+<code>global.percentile.max</code> and then extracts
+<code>-log2(1 - chipseq_q)</code>.</p>
 <p>You can also inline vtracks or expressions directly in
 <code>panels.tracks</code> using objects that include
 <code>src</code>/<code>func</code> or <code>expr</code>.</p>
@@ -343,27 +360,27 @@ keeping the displayed name.</li>
 <div class="section level3">
 <h3 id="data-panels">Data panels<a class="anchor" aria-label="anchor" href="#data-panels"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> signal</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> data</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">    </span><span class="fu">tracks</span><span class="kw">:</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> silicus.k27</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> silicus.k4</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">    </span><span class="fu">plot_type</span><span class="kw">:</span><span class="at"> line</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">    </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">    </span><span class="fu">alpha</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.8</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="at">    </span><span class="fu">linewidth</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.7</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="at">    </span><span class="fu">show_legend</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> signal</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> data</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="at">    </span><span class="fu">tracks</span><span class="kw">:</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> silicus.k27</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> silicus.k4</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="at">    </span><span class="fu">plot_type</span><span class="kw">:</span><span class="at"> line</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="at">    </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="at">    </span><span class="fu">alpha</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.8</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="at">    </span><span class="fu">linewidth</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.7</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="at">    </span><span class="fu">show_legend</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <p>Grouping and faceting (from
 <code>inst/examples/silicus.yaml</code>):</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">grouping</span><span class="kw">:</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="at">  </span><span class="fu">color_by</span><span class="kw">:</span><span class="at"> source</span></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="at">  </span><span class="fu">pattern</span><span class="kw">:</span><span class="at"> </span><span class="st">"^(?&lt;source&gt;.+)</span><span class="sc">\\</span><span class="st">.(?&lt;mark&gt;.+)$"</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="at">  </span><span class="fu">overrides</span><span class="kw">:</span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="at">    </span><span class="fu">norm.k27</span><span class="kw">:</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="at">      </span><span class="fu">source</span><span class="kw">:</span><span class="at"> norm</span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="at">      </span><span class="fu">mark</span><span class="kw">:</span><span class="at"> k27</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="fu">facet_by</span><span class="kw">:</span><span class="at"> mark</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">grouping</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="fu">color_by</span><span class="kw">:</span><span class="at"> source</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">  </span><span class="fu">pattern</span><span class="kw">:</span><span class="at"> </span><span class="st">"^(?&lt;source&gt;.+)</span><span class="sc">\\</span><span class="st">.(?&lt;mark&gt;.+)$"</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">  </span><span class="fu">overrides</span><span class="kw">:</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">    </span><span class="fu">norm.k27</span><span class="kw">:</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">      </span><span class="fu">source</span><span class="kw">:</span><span class="at"> norm</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="at">      </span><span class="fu">mark</span><span class="kw">:</span><span class="at"> k27</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">facet_by</span><span class="kw">:</span><span class="at"> mark</span></span></code></pre></div>
 <ul>
 <li>
 <code>pattern</code> uses named capture groups to add metadata
@@ -376,38 +393,38 @@ columns.</li>
 facet can scale independently.</li>
 </ul>
 <p>Horizontal lines can be added to data panels:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">hlines</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="st">"y"</span><span class="kw">:</span><span class="at"> </span><span class="dv">6</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> black</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> solid</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> </span><span class="st">"Midpoint"</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">stat</span><span class="kw">:</span><span class="at"> mean</span></span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> blue</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> dashed</span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> </span><span class="st">"Mean"</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">hlines</span><span class="kw">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="st">"y"</span><span class="kw">:</span><span class="at"> </span><span class="dv">6</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> black</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> solid</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> </span><span class="st">"Midpoint"</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">stat</span><span class="kw">:</span><span class="at"> mean</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> blue</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> dashed</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> </span><span class="st">"Mean"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="annotation-panels">Annotation panels<a class="anchor" aria-label="anchor" href="#annotation-panels"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> genes</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> annotation</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="at">    </span><span class="fu">exon_source</span><span class="kw">:</span><span class="at"> intervs.global.exon</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="at">    </span><span class="fu">tss_source</span><span class="kw">:</span><span class="at"> intervs.global.tss</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="at">    </span><span class="fu">gene_label_field</span><span class="kw">:</span><span class="at"> geneSymbol</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> navy</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="at">    </span><span class="fu">show_strand_arrows</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> genes</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> annotation</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="at">    </span><span class="fu">exon_source</span><span class="kw">:</span><span class="at"> intervs.global.exon</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="at">    </span><span class="fu">tss_source</span><span class="kw">:</span><span class="at"> intervs.global.tss</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="at">    </span><span class="fu">gene_label_field</span><span class="kw">:</span><span class="at"> geneSymbol</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> navy</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="at">    </span><span class="fu">show_strand_arrows</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="intervals-panels">Intervals panels<a class="anchor" aria-label="anchor" href="#intervals-panels"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> repeats</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> intervals</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="at">    </span><span class="fu">intervals</span><span class="kw">:</span><span class="at"> intervs.global.rmsk</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="at">    </span><span class="fu">color_by</span><span class="kw">:</span><span class="at"> class</span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="at">    </span><span class="fu">filter_field</span><span class="kw">:</span><span class="at"> class</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="at">    </span><span class="fu">filter_values</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">LINE</span><span class="kw">,</span><span class="at"> LTR</span><span class="kw">]</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> repeats</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> intervals</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="at">    </span><span class="fu">intervals</span><span class="kw">:</span><span class="at"> intervs.global.rmsk</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="at">    </span><span class="fu">color_by</span><span class="kw">:</span><span class="at"> class</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="at">    </span><span class="fu">filter_field</span><span class="kw">:</span><span class="at"> class</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="at">    </span><span class="fu">filter_values</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">LINE</span><span class="kw">,</span><span class="at"> LTR</span><span class="kw">]</span></span></code></pre></div>
 <p>Intervals panels support <code>source</code> (<code>intervals</code>
 or <code>file</code>), <code>color_by</code>, <code>colors</code>,
 <code>outline_color</code>, <code>label_field</code>,
@@ -417,11 +434,11 @@ or <code>file</code>), <code>color_by</code>, <code>colors</code>,
 <div class="section level3">
 <h3 id="ideogram-panels">Ideogram panels<a class="anchor" aria-label="anchor" href="#ideogram-panels"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> ideogram</span></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> ideogram</span></span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="at">    </span><span class="fu">cytoband_track</span><span class="kw">:</span><span class="at"> intervs.global.cytoband</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="at">    </span><span class="fu">highlight_current</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">panels</span><span class="kw">:</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> ideogram</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> ideogram</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="at">    </span><span class="fu">cytoband_track</span><span class="kw">:</span><span class="at"> intervs.global.cytoband</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="at">    </span><span class="fu">highlight_current</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <p>Ideograms optionally load cytobands from <code>cytoband_track</code>
 or <code>cytoband_file</code> and can highlight the current region.</p>
 </div>
@@ -430,14 +447,14 @@ or <code>cytoband_file</code> and can highlight the current region.</p>
 <h2 id="vertical-lines-vlines">Vertical lines (<code>vlines</code>)<a class="anchor" aria-label="anchor" href="#vertical-lines-vlines"></a>
 </h2>
 <p>Vertical line layers can be sourced in several ways:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">vlines</span><span class="kw">:</span></span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> peaks</span></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="at">    </span><span class="fu">source</span><span class="kw">:</span><span class="at"> file</span></span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="at">    </span><span class="fu">file</span><span class="kw">:</span><span class="at"> peaks.tsv</span></span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> grey50</span></span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> dashed</span></span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="at">    </span><span class="fu">show_bounds</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="at">    </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">vlines</span><span class="kw">:</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> peaks</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="at">    </span><span class="fu">source</span><span class="kw">:</span><span class="at"> file</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="at">    </span><span class="fu">file</span><span class="kw">:</span><span class="at"> peaks.tsv</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="at">    </span><span class="fu">color</span><span class="kw">:</span><span class="at"> grey50</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="at">    </span><span class="fu">linetype</span><span class="kw">:</span><span class="at"> dashed</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="at">    </span><span class="fu">show_bounds</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="at">    </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <p>Supported sources:</p>
 <ul>
 <li>
@@ -485,18 +502,18 @@ then on each vtrack with its own <code>transforms</code> list.</p>
 <code>pos</code>.</li>
 </ul>
 <p>Example:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">transforms</span><span class="kw">:</span></span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> smooth</span></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="at">    </span><span class="fu">window</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> log2</span></span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="at">    </span><span class="fu">offset</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> clip</span></span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="at">    </span><span class="fu">min</span><span class="kw">:</span><span class="at"> </span><span class="dv">0</span></span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="at">    </span><span class="fu">max</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">transforms</span><span class="kw">:</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> smooth</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="at">    </span><span class="fu">window</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> log2</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="at">    </span><span class="fu">offset</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">type</span><span class="kw">:</span><span class="at"> clip</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="at">    </span><span class="fu">min</span><span class="kw">:</span><span class="at"> </span><span class="dv">0</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="at">    </span><span class="fu">max</span><span class="kw">:</span><span class="at"> </span><span class="dv">10</span></span></code></pre></div>
 <p>Scale controls are per panel:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">ylim</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">0</span><span class="kw">,</span><span class="at"> </span><span class="dv">10</span><span class="kw">]</span></span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">y_title</span><span class="kw">:</span><span class="at"> </span><span class="st">"ATAC"</span></span>
-<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">y_labels</span><span class="kw">:</span><span class="at"> percent</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">ylim</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">0</span><span class="kw">,</span><span class="at"> </span><span class="dv">10</span><span class="kw">]</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">y_title</span><span class="kw">:</span><span class="at"> </span><span class="st">"ATAC"</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="fu">y_labels</span><span class="kw">:</span><span class="at"> percent</span></span></code></pre></div>
 <ul>
 <li>
 <code>ylim</code> uses <code>coord_cartesian</code> so data outside
@@ -540,9 +557,9 @@ annotations.</li>
 configuration doesn’t exist.</p>
 <p><strong>Solution</strong>: Check the path in your YAML config under
 the active profile:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">profiles</span><span class="kw">:</span></span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="at">  </span><span class="fu">local</span><span class="kw">:</span></span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="at">    </span><span class="fu">misha_root</span><span class="kw">:</span><span class="at"> /path/to/misha</span><span class="co">  # Verify this path exists</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">profiles</span><span class="kw">:</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="at">  </span><span class="fu">local</span><span class="kw">:</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="at">    </span><span class="fu">misha_root</span><span class="kw">:</span><span class="at"> /path/to/misha</span><span class="co">  # Verify this path exists</span></span></code></pre></div>
 <p>Ensure the directory contains a valid misha trackdb (should have
 <code>.misha</code> marker files).</p>
 </div>
@@ -552,7 +569,7 @@ the active profile:</p>
 <p>The misha root exists but <code>gsetroot()</code> failed. This
 usually means the directory is not a valid misha database.</p>
 <p><strong>Solution</strong>: Verify your misha root:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">misha</span><span class="fu">::</span><span class="fu"><a href="https://tanaylab.github.io/misha/reference/gdb.init.html" class="external-link">gsetroot</a></span><span class="op">(</span><span class="st">"/your/misha/root"</span><span class="op">)</span></span>
 <span><span class="fu">misha</span><span class="fu">::</span><span class="fu"><a href="https://tanaylab.github.io/misha/reference/gtrack.ls.html" class="external-link">gtrack.ls</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># Should list available tracks</span></span></code></pre></div>
 </div>

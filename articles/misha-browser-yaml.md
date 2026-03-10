@@ -242,10 +242,30 @@ Supported patterns:
   and iterator shifts (`sshift`, `eshift`, `dim`).
 - Sequence-based vtracks (no `src` required) for `kmer.*`, `pwm.*`,
   `masked.*` functions.
-- Expression vtracks: `expr` evaluates a track expression without
-  creating a new vtrack source.
-- Expression wrappers: `expression` lets you wrap extraction with
-  functions like `pmax(signal, 0)` while keeping the displayed name.
+- Expression handling uses a single `expression` field. If `src`/`func`
+  are present, it wraps the created vtrack during extraction. If no
+  `src` or `func` are given, it defines a pure expression vtrack.
+
+For example, this is correct:
+
+``` r
+browser <- browser_create(misha_root = .misha$GROOT) %>%
+  browser_add_vtrack(
+    "chipseq_q",
+    src = "chipseq.ctcf.LCL.hsa81.3",
+    func = "global.percentile.max",
+    expression = "-log2(1 - chipseq_q)"
+  ) %>%
+  browser_add_panel(
+    name = "chipseq",
+    tracks = "chipseq_q",
+    plot_type = "line",
+    height = 2
+  )
+```
+
+This creates `chipseq_q` with `global.percentile.max` and then extracts
+`-log2(1 - chipseq_q)`.
 
 You can also inline vtracks or expressions directly in `panels.tracks`
 using objects that include `src`/`func` or `expr`.
