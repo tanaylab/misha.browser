@@ -406,7 +406,7 @@ browser_save <- function(browser, file) {
 #' @param grouping List with color_by, pattern, overrides
 #' @param facet_by Variable to facet by (from grouping pattern)
 #' @param transforms List of transforms to apply
-#' @param plot_type Plot type: "line", "area", "point", "histogram"
+#' @param plot_type Plot type: "line", "area", "point", "histogram", "segment"
 #' @param colors Named vector of colors
 #' @param ylim Y-axis limits
 #' @param height Relative height

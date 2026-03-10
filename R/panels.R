@@ -69,7 +69,7 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
 
     # Apply color scale only if color mapping is used (not for area plots with fixed colors)
     plot_type <- panel$plot_type %||% "line"
-    uses_color_mapping <- plot_type %in% c("line", "point") ||
+    uses_color_mapping <- plot_type %in% c("line", "point", "segment") ||
         (plot_type == "histogram" && is.null(panel$fill))
 
     if (uses_color_mapping && length(colors) > 0) {
@@ -132,6 +132,16 @@ add_data_layer <- function(p, panel, color_by) {
             p + ggplot2::geom_col(
                 color_aes,
                 width = panel$bar_width %||% 1, alpha = alpha, na.rm = TRUE
+            )
+        },
+        "segment" = {
+            p + ggplot2::geom_segment(
+                ggplot2::aes(
+                    x = pos, xend = pos,
+                    y = panel$baseline %||% 0, yend = value,
+                    !!!color_aes
+                ),
+                linewidth = linewidth, alpha = alpha, na.rm = TRUE
             )
         },
         # Default: line

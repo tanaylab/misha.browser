@@ -315,7 +315,7 @@ validate_panel_full <- function(panel, index, vtrack_names = character(0)) {
         }
 
         # Plot type validation
-        valid_plot_types <- c("line", "area", "point", "histogram")
+        valid_plot_types <- c("line", "area", "point", "histogram", "segment")
         if (!is.null(panel$plot_type) && !panel$plot_type %in% valid_plot_types) {
             errors[[paste0(prefix, "plot_type")]] <- paste("Plot type must be one of:", paste(valid_plot_types, collapse = ", "))
         }
