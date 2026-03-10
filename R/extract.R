@@ -38,7 +38,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
 
     # Get extraction mode: "fixed" (default), "dynamic", or "dynamic_smooth"
     extraction_mode <- browser$cfg$plot$extraction_mode %||% "fixed"
-    base_iter <- browser$cfg$plot$iterator %||% .DEFAULT_ITERATOR
+    base_iter <- panel$iterator %||% browser$cfg$plot$iterator %||% .DEFAULT_ITERATOR
     target_points <- browser$cfg$plot$target_points %||% .DEFAULT_TARGET_POINTS
 
     # Track vtracks that need iterator restoration
