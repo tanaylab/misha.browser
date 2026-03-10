@@ -117,7 +117,7 @@ init_vtracks <- function(browser) {
         # Expression vtracks: store expression for extraction but don't create misha vtrack
         if (vt$vtype == "expr") {
             # Store the raw expression for use during extraction
-            browser$state$vtrack_expressions[[vt$name]] <- vt$expr
+            browser$state$vtrack_expressions[[vt$name]] <- vt$expression
             # Don't add to misha_vtrack_names since this isn't a real misha vtrack
             next
         }
@@ -357,7 +357,7 @@ print.browser <- function(x, ...) {
             }
         }
         for (vt in x$cfg$vtracks) {
-            right <- vt$src %||% vt$expr %||% "sequence"
+            right <- vt$src %||% vt$expression %||% "sequence"
             # Use panel name when vtrack is a pass-through (name == src) used in a panel
             left <- if (identical(vt$name, vt$src) && vt$name %in% names(vtrack_to_panel)) {
                 vtrack_to_panel[vt$name]
@@ -475,17 +475,21 @@ browser_add_panel <- function(browser, name, tracks = NULL,
 
 #' Add a virtual track to the browser
 #'
-#' Adds a virtual track definition to the browser configuration. Supports
-#' standard vtracks (with a source track and aggregation function) and
-#' expression vtracks (computed from a track expression).
+#' Adds a virtual track definition to the browser configuration. Expression
+#' handling is inferred from the provided fields: if `src`/`func` are present,
+#' `expression` wraps the created vtrack during extraction; otherwise,
+#' `expression` defines a pure expression vtrack.
 #'
 #' @param browser Browser object
 #' @param name Name for the virtual track
 #' @param src Source track name (for standard vtracks)
 #' @param func Aggregation function (default "avg"). Common values: "avg", "sum", "min", "max"
-#' @param vtype Vtrack type: "standard", "expr", "sequence", "intervals". Auto-detected if NULL.
-#' @param expr Track expression string (for expression vtracks, e.g. "log2(1 + trackname)")
-#' @param expression Optional expression wrapping the vtrack name (e.g. "pmax(vtrack_name, 0)")
+#' @param vtype Vtrack type: "standard", "expr", "sequence", "intervals". Usually inferred automatically.
+#' @param expression Track expression. If `src`/`func` are provided, this wraps
+#'   the created vtrack during extraction (e.g. `pmax(vtrack_name, 0)`). If no
+#'   `src` or `func` are provided, it defines a pure expression vtrack (e.g.
+#'   `log2(1 + trackname)`).
+#' @param expr Deprecated alias for `expression`
 #' @param sshift Start shift in bp
 #' @param eshift End shift in bp
 #' @param dim Dimension for 2D tracks
@@ -495,19 +499,24 @@ browser_add_panel <- function(browser, name, tracks = NULL,
 #' @examples
 #' \dontrun{
 #' browser <- browser_create() %>%
-#'     browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)") %>%
+#'     browser_add_vtrack("ctcf_log2", expression = "log2(1 + chipseq.ctcf)") %>%
 #'     browser_add_vtrack("my_signal", src = "some.track", func = "avg") %>%
 #'     browser_add_panel(name = "signal", tracks = c("ctcf_log2", "my_signal"))
 #' }
 browser_add_vtrack <- function(browser, name, src = NULL, func = "avg",
                                vtype = NULL, expr = NULL, expression = NULL,
                                sshift = NULL, eshift = NULL, dim = NULL, ...) {
-    if (is.null(src) && is.null(expr)) {
-        cli::cli_abort("Either {.arg src} or {.arg expr} must be provided")
+    if (!is.null(expr) && is.null(expression)) {
+        expression <- expr
     }
 
-    if (!is.null(expr)) {
-        vtrack <- list(name = name, vtype = "expr", expr = expr)
+    has_pure_expression <- is.null(src) && missing(func) && !is.null(expression)
+    if (is.null(src) && is.null(expression) && missing(func)) {
+        cli::cli_abort("Provide either {.arg src} or {.arg expression}")
+    }
+
+    if (has_pure_expression) {
+        vtrack <- list(name = name, vtype = "expr", expression = expression)
     } else {
         vtrack <- list(name = name, src = src, func = func)
         if (!is.null(vtype)) vtrack$vtype <- vtype

@@ -201,7 +201,7 @@ vtracks:
     params: 0.5
 
   # Vtrack with expression wrapper (e.g., pmax, log2)
-  # The expression is what gets extracted, with colnames mapping back to name
+  # With src + func present, expression wraps the created vtrack
   - name: norm.k27
     src: at.EB4_norm_300
     func: sum
@@ -220,9 +220,9 @@ vtracks:
       pssm: motif.csv
       bidirect: true
 
-  # Pure track expression (no vtrack created)
+  # Pure track expression (no misha vtrack created)
   - name: normalized
-    expr: "track1 - background"
+    expression: "track1 - background"
 
   # Vtrack with filter
   - name: unmasked
@@ -232,9 +232,35 @@ vtracks:
 ```
 
 The `expression` field defaults to the vtrack name but can be any valid
-misha expression. This allows wrapping vtracks with functions like
-`pmax()`, `log2()`, or arithmetic operations while keeping the vtrack
-name for display.
+misha expression.
+
+The behavior is inferred:
+
+- If `src`/`func` are present, `expression` wraps the created vtrack during
+  extraction.
+- If no `src` or `func` are given, `expression` defines a pure expression
+  vtrack.
+
+For example, this is correct:
+
+``` r
+browser <- browser_create(misha_root = .misha$GROOT) %>%
+  browser_add_vtrack(
+    "chipseq_q",
+    src = "chipseq.ctcf.LCL.hsa81.3",
+    func = "global.percentile.max",
+    expression = "-log2(1 - chipseq_q)"
+  ) %>%
+  browser_add_panel(
+    name = "chipseq",
+    tracks = "chipseq_q",
+    plot_type = "line",
+    height = 2
+  )
+```
+
+This creates `chipseq_q` with `global.percentile.max` and then extracts
+`-log2(1 - chipseq_q)`.
 
 ### Panel Types
 

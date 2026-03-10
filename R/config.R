@@ -329,9 +329,15 @@ validate_vtrack <- function(vtrack, index) {
         vtrack$track <- NULL
     }
 
+    # Legacy alias: expr -> expression
+    if (!is.null(vtrack$expr) && is.null(vtrack$expression)) {
+        vtrack$expression <- vtrack$expr
+    }
+    vtrack$expr <- NULL
+
     # Determine vtrack type
-    if (!is.null(vtrack$expr)) {
-        # Expression-based vtrack
+    if (!is.null(vtrack$expression) && is.null(vtrack$src) && is.null(vtrack$func)) {
+        # Pure expression-based vtrack
         vtrack$vtype <- "expr"
     } else if (is.null(vtrack$src)) {
         # Sequence-based vtrack (no source needed for kmer, pwm, masked)
@@ -368,8 +374,11 @@ validate_vtrack <- function(vtrack, index) {
         vtrack$params <- list(vtrack$params)
     }
 
-    # Expression defaults to vtrack name (allows wrapping with functions like pmax)
+    # Standard and sequence vtracks default to identity extraction via their name.
     if (is.null(vtrack$expression)) {
+        if (vtrack$vtype == "expr") {
+            cli::cli_abort("Virtual track '{vtrack$name}' missing 'expression'")
+        }
         vtrack$expression <- vtrack$name
     }
 

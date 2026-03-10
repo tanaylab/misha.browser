@@ -248,19 +248,32 @@ test_that("browser_add_vtrack adds standard vtrack", {
 
 test_that("browser_add_vtrack adds expression vtrack", {
     browser <- browser_create() %>%
-        browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)")
+        browser_add_vtrack("ctcf_log2", expression = "log2(1 + chipseq.ctcf)")
 
     vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
     expect_true("ctcf_log2" %in% vt_names)
 
     vt <- browser$cfg$vtracks[[which(vt_names == "ctcf_log2")]]
     expect_equal(vt$vtype, "expr")
-    expect_equal(vt$expr, "log2(1 + chipseq.ctcf)")
+    expect_equal(vt$expression, "log2(1 + chipseq.ctcf)")
+    expect_false("expr" %in% names(vt))
+})
+
+test_that("browser_add_vtrack normalizes legacy expr alias", {
+    browser <- browser_create() %>%
+        browser_add_vtrack("ctcf_log2", expr = "log2(1 + chipseq.ctcf)")
+
+    vt_names <- vapply(browser$cfg$vtracks, function(v) v$name, character(1))
+    vt <- browser$cfg$vtracks[[which(vt_names == "ctcf_log2")]]
+
+    expect_equal(vt$vtype, "expr")
+    expect_equal(vt$expression, "log2(1 + chipseq.ctcf)")
+    expect_false("expr" %in% names(vt))
 })
 
 test_that("browser_add_vtrack supports pipe chaining with browser_add_panel", {
     browser <- browser_create() %>%
-        browser_add_vtrack("vt1", expr = "log2(1 + track1)") %>%
+        browser_add_vtrack("vt1", expression = "log2(1 + track1)") %>%
         browser_add_vtrack("vt2", src = "track2", func = "sum") %>%
         browser_add_panel(name = "signal", tracks = c("vt1", "vt2"))
 
@@ -282,9 +295,9 @@ test_that("browser_add_vtrack replaces duplicate vtrack names", {
     expect_equal(vt$func, "sum")
 })
 
-test_that("browser_add_vtrack errors when neither src nor expr provided", {
+test_that("browser_add_vtrack errors when neither src nor expression provided", {
     browser <- browser_create()
-    expect_error(browser_add_vtrack(browser, "bad_vt"), "src.*expr")
+    expect_error(browser_add_vtrack(browser, "bad_vt"), "src.*expression")
 })
 
 test_that("browser_add_vtrack stores shift and dim parameters", {

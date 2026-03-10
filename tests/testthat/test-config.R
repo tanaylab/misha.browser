@@ -99,11 +99,21 @@ test_that("validate_vtrack supports function parameters", {
 })
 
 test_that("validate_vtrack supports expression vtracks", {
+    vt <- list(name = "ratio", expression = "track1 / track2")
+    result <- validate_vtrack(vt, 1)
+
+    expect_equal(result$vtype, "expr")
+    expect_equal(result$expression, "track1 / track2")
+    expect_false("expr" %in% names(result))
+})
+
+test_that("validate_vtrack normalizes legacy expr field", {
     vt <- list(name = "ratio", expr = "track1 / track2")
     result <- validate_vtrack(vt, 1)
 
     expect_equal(result$vtype, "expr")
-    expect_equal(result$expr, "track1 / track2")
+    expect_equal(result$expression, "track1 / track2")
+    expect_false("expr" %in% names(result))
 })
 
 test_that("validate_vtrack supports sequence-based vtracks", {

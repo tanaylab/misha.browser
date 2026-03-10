@@ -259,9 +259,9 @@ config_editor_server <- function(id, browser_rv, original_config) {
                                 8,
                                 shiny::textInput(
                                     ns(paste0("vt_expr_", i)),
-                                    "Expression Wrapper",
+                                    "Expression",
                                     value = vt$expression %||% "",
-                                    placeholder = "e.g., pmax(vtrack_name, 0)"
+                                    placeholder = "Optional; pure expression if no src/func"
                                 )
                             )
                         )

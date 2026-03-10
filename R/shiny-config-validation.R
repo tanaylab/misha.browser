@@ -161,8 +161,9 @@ validate_vtrack_full <- function(vtrack, index) {
     # Determine vtrack type based on function
     func <- vtrack$func %||% "sum"
     vtype <- vtrack$vtype
+    expression <- vtrack$expression %||% vtrack$expr
     if (is.null(vtype)) {
-        if (!is.null(vtrack$expr)) {
+        if (!is.null(expression) && is.null(vtrack$src) && is.null(vtrack$func)) {
             vtype <- "expr"
         } else if (is_sequence_function(func)) {
             vtype <- "sequence"
@@ -222,31 +223,31 @@ validate_vtrack_full <- function(vtrack, index) {
         }
     }
 
-    # Expression validation (for expr vtracks)
+    # Expression validation (for pure expression vtracks)
     if (vtype == "expr") {
-        if (is_empty(vtrack$expr)) {
-            errors[[paste0(prefix, "expr")]] <- "Expression is required for expression vtracks"
+        if (is_empty(expression)) {
+            errors[[paste0(prefix, "expression")]] <- "Expression is required for expression vtracks"
         } else {
             # Try to parse expression
             tryCatch(
                 {
-                    parse(text = vtrack$expr)
+                    parse(text = expression)
                 },
                 error = function(e) {
-                    errors[[paste0(prefix, "expr")]] <<- paste("Invalid expression:", e$message)
+                    errors[[paste0(prefix, "expression")]] <<- paste("Invalid expression:", e$message)
                 }
             )
         }
     }
 
     # Wrapper expression validation
-    if (!is_empty(vtrack$expression) && !is.null(vtrack$name) && vtrack$expression != vtrack$name) {
+    if (!is_empty(expression) && !is.null(vtrack$name) && expression != vtrack$name) {
         tryCatch(
             {
-                parse(text = vtrack$expression)
+                parse(text = expression)
             },
             error = function(e) {
-                errors[[paste0(prefix, "expression")]] <<- paste("Invalid wrapper expression:", e$message)
+                errors[[paste0(prefix, "expression")]] <<- paste("Invalid expression:", e$message)
             }
         )
     }
