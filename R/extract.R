@@ -169,7 +169,7 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     # Apply transforms
     t2 <- Sys.time()
     transforms <- panel$transforms %||% list()
-    smooth_window <- browser$state$smooth_window
+    smooth_window <- panel$smooth_window %||% browser$state$smooth_window
     if (extraction_mode %in% c("dynamic", "dynamic_smooth")) {
         # In dynamic/dynamic_smooth modes, skip smooth transforms
         # (iterator or vtrack aggregation provides smoothing)
