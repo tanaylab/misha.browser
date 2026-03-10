@@ -545,6 +545,35 @@ browser_add_vtrack <- function(browser, name, src = NULL, func = "avg",
         browser$cfg$vtracks <- c(browser$cfg$vtracks %||% list(), list(vtrack))
     }
 
+    # Create the vtrack immediately so it's available for plotting
+    # (init_vtracks only runs during browser_create, before add_vtrack calls)
+    if (!is.null(browser$state)) {
+        if (has_pure_expression) {
+            browser$state$vtrack_expressions[[name]] <- expression
+        } else if (!is.null(browser$cfg$._misha_root)) {
+            tryCatch(
+                {
+                    # Remove old vtrack if replacing
+                    tryCatch(misha::gvtrack.rm(name), error = function(e) NULL)
+                    create_vtrack(vtrack, browser$cfg)
+                    if (!is.null(vtrack$expression)) {
+                        browser$state$vtrack_expressions[[name]] <- vtrack$expression
+                    }
+                    if (!is.null(browser$state$misha_vtrack_names)) {
+                        browser$state$misha_vtrack_names <- unique(c(
+                            browser$state$misha_vtrack_names, name
+                        ))
+                    }
+                },
+                error = function(e) {
+                    if (!grepl("exists", e$message, ignore.case = TRUE)) {
+                        cli::cli_warn("Failed to create vtrack '{name}': {e$message}")
+                    }
+                }
+            )
+        }
+    }
+
     browser
 }
 
