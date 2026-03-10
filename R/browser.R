@@ -410,7 +410,7 @@ browser_save <- function(browser, file) {
 #' @param colors Named vector of colors
 #' @param ylim Y-axis limits
 #' @param height Relative height
-#' @param ... Additional panel options
+#' @param ... Additional panel options (e.g. `iterator` for per-panel iterator override)
 #' @return Updated browser object
 #' @export
 browser_add_panel <- function(browser, name, tracks = NULL,
