@@ -245,6 +245,62 @@ test_that("extract_intervals_data applies value filter", {
     unlink(temp_file)
 })
 
+test_that("extract_intervals_data filters to overlapping intervals only", {
+    # domain_A contains the region (HiC domain larger than view); domain_B does not overlap
+    temp_file <- tempfile(fileext = ".tsv")
+    write.table(
+        data.frame(
+            chrom = c("chr1", "chr1"),
+            start = c(50, 500),   # domain_B (500-600) does not overlap region (100-400)
+            end = c(500, 600),
+            name = c("domain_A", "domain_B")
+        ),
+        temp_file,
+        sep = "\t",
+        row.names = FALSE
+    )
+
+    panel <- list(source = "file", file = temp_file)
+    region <- data.frame(chrom = "chr1", start = 100, end = 400)
+    result <- extract_intervals_data(panel, region)
+
+    # domain_A (50-500) overlaps; domain_B (500-600) does not
+    expect_equal(nrow(result), 1)
+    expect_equal(result$name, "domain_A")
+
+    unlink(temp_file)
+})
+
+test_that("render_intervals_panel clips large intervals to visible region", {
+    # Interval spanning 1-1e6, region 100-400: should be clipped to 100-400 for display
+    temp_file <- tempfile(fileext = ".tsv")
+    write.table(
+        data.frame(chrom = "chr1", start = 1, end = 1e6, name = "big_domain"),
+        temp_file,
+        sep = "\t",
+        row.names = FALSE
+    )
+    panel <- list(
+        source = "file",
+        file = temp_file,
+        name = "tads",
+        type = "intervals",
+        color = "coral"
+    )
+    region <- data.frame(chrom = "chr1", start = 100, end = 400)
+
+    result <- render_intervals_panel(panel, region)
+    expect_s3_class(result, "ggplot")
+
+    # The geom_rect layer should have clipped coords (start=100, end=400)
+    rect_layer <- result$layers[[which(sapply(result$layers, function(l) inherits(l$geom, "GeomRect")))]]
+    rect_data <- rect_layer$data
+    expect_true(all(rect_data$start >= 100))
+    expect_true(all(rect_data$end <= 400))
+
+    unlink(temp_file)
+})
+
 test_that("extract_intervals_data applies regex filter", {
     temp_file <- tempfile(fileext = ".tsv")
     write.table(

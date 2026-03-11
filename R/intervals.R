@@ -21,6 +21,14 @@ render_intervals_panel <- function(panel, region, vlines_data = NULL) {
     p <- add_vlines_to_plot(p, vlines_data, x_limits)
 
     if (!is.null(intervals) && nrow(intervals) > 0) {
+        # Clip interval coordinates to the visible region so that intervals larger
+        # than the view (e.g. HiC domains/TADs) are displayed as blocks spanning
+        # the entire visible region. Without clipping, scale_x_continuous(limits)
+        # censors out-of-bounds coords to NA, causing geom_rect to not draw.
+        reg_start <- region$start
+        reg_end <- region$end
+        intervals$start <- pmax(intervals$start, reg_start)
+        intervals$end <- pmin(intervals$end, reg_end)
         intervals <- intervals[order(intervals$start), ]
         intervals$y_level <- assign_interval_levels(intervals)
 
@@ -147,6 +155,16 @@ extract_intervals_data <- function(panel, region) {
     }
 
     intervals <- intervals[intervals$chrom == region$chrom, ]
+    if (nrow(intervals) == 0) {
+        return(NULL)
+    }
+
+    # Keep only intervals that overlap the viewing region (start < reg_end & end > reg_start).
+    # For intervals larger than the region (e.g. HiC domains), this ensures they are included.
+    reg_start <- region$start
+    reg_end <- region$end
+    overlaps <- intervals$start < reg_end & intervals$end > reg_start
+    intervals <- intervals[overlaps, , drop = FALSE]
     if (nrow(intervals) == 0) {
         return(NULL)
     }
