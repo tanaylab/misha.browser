@@ -199,7 +199,7 @@ get_all_vlines <- function(browser, region) {
         vline <- vlines_cfg[[i]]
 
         # Check if enabled in state
-        if (length(vlines_enabled) >= i && !vlines_enabled[i]) next
+        if (length(vlines_enabled) >= i && !isTRUE(vlines_enabled[[i]])) next
 
         intervals <- load_vline_intervals(
             vline,

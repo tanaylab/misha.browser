@@ -40,7 +40,7 @@ browser_create <- function(config = NULL, misha_root = NULL, title = "Genome Bro
                 highlight = NULL,
                 smooth_window = cfg$ui$smooth_window_default,
                 active_tracks = NULL,
-                vlines_enabled = sapply(cfg$vlines, function(v) v$enabled %||% TRUE)
+                vlines_enabled = as.logical(sapply(cfg$vlines, function(v) v$enabled %||% TRUE))
             )
         ),
         class = "browser"
@@ -702,7 +702,7 @@ browser_add_vlines <- function(browser, name,
 
     vline <- validate_vline(vline, length(browser$cfg$vlines) + 1)
     browser$cfg$vlines <- c(browser$cfg$vlines, list(vline))
-    browser$state$vlines_enabled <- c(browser$state$vlines_enabled, enabled)
+    browser$state$vlines_enabled <- c(as.logical(browser$state$vlines_enabled), enabled)
 
     browser
 }
