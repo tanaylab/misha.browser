@@ -102,11 +102,13 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     )
 
     # Generate cache key (include mode to avoid cache conflicts)
-    # For dynamic_smooth, include smoothing_bp in key
+    # Use effective smooth_window (per-panel override or global) for cache key
+    # so that panels with different smooth_window settings don't share cache entries
+    effective_smooth <- panel$smooth_window %||% browser$state$smooth_window
     smoothing_key <- if (extraction_mode == "dynamic_smooth") {
         browser$state$smooth_window %||% browser$cfg$plot$smoothing_bp %||% .DEFAULT_SMOOTHING_BP
     } else {
-        browser$state$smooth_window
+        effective_smooth
     }
 
     # Use pre-computed panel signature if available (from validate_panel)
@@ -114,7 +116,8 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
         transforms = panel$transforms,
         grouping = panel$grouping,
         facet_by = panel$facet_by,
-        plot_type = panel$plot_type
+        plot_type = panel$plot_type,
+        smooth_window = panel$smooth_window
     ))
 
     # Build maps for vtrack transforms and their signatures (single pass)
