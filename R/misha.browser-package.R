@@ -12,7 +12,7 @@ NULL
 utils::globalVariables(c(
     "start", "end", "pos", "value", "stain",
     "y_level", "min_start", "max_end",
-    "x_start", "x_end", "strand",
+    "x_start", "x_end", "x_from", "x_to", "strand",
     "chrom", "track", "source", "mark",
     "intervalID", "label_x"
 ))

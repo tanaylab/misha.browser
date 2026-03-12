@@ -218,6 +218,14 @@ create_panel_form <- function(ns, panel, index, available_tracks) {
                         "Show Labels",
                         value = panel$show_labels %||% FALSE
                     )
+                ),
+                shiny::column(
+                    4,
+                    shiny::checkboxInput(
+                        ns(paste0("pnl_intervals_direction_", index)),
+                        "Show Direction (arrows)",
+                        value = panel$show_direction %||% FALSE
+                    )
                 )
             ),
             shiny::fluidRow(

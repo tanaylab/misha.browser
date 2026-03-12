@@ -238,6 +238,8 @@ validate_panel <- function(panel, index) {
         panel$outline_color <- panel$outline_color %||% "grey20"
         panel$height <- panel$height %||% .DEFAULT_INTERVALS_HEIGHT
         panel$show_labels <- panel$show_labels %||% FALSE
+        panel$show_direction <- panel$show_direction %||% FALSE
+        panel$direction_field <- panel$direction_field %||% "strand"
     } else if (panel$type == "ideogram") {
         panel$highlight_current <- panel$highlight_current %||% TRUE
         panel$height <- panel$height %||% .DEFAULT_IDEOGRAM_HEIGHT

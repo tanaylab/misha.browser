@@ -31,7 +31,7 @@ browser_add_panel(
 
 \item{transforms}{List of transforms to apply}
 
-\item{plot_type}{Plot type: "line", "area", "point", "histogram"}
+\item{plot_type}{Plot type: "line", "area", "point", "histogram", "segment"}
 
 \item{colors}{Named vector of colors}
 
@@ -39,7 +39,7 @@ browser_add_panel(
 
 \item{height}{Relative height}
 
-\item{...}{Additional panel options}
+\item{...}{Additional panel options (e.g. \code{iterator} for per-panel iterator override)}
 }
 \value{
 Updated browser object

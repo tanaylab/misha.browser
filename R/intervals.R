@@ -35,36 +35,79 @@ render_intervals_panel <- function(panel, region, vlines_data = NULL) {
         color_by <- panel$color_by %||% ""
         panel_colors <- panel$colors %||% list()
         cfg_colors <- panel$._cfg_colors %||% list()
+        show_direction <- isTRUE(panel$show_direction %||% FALSE)
+        has_direction <- ".direction" %in% names(intervals)
 
-        if (nchar(color_by) > 0 && color_by %in% names(intervals)) {
-            color_values <- unique(intervals[[color_by]])
-            color_values <- color_values[!is.na(color_values)]
-            color_map <- resolve_interval_colors(color_values, panel_colors, cfg_colors)
-            p <- p + ggplot2::geom_rect(
-                data = intervals,
-                ggplot2::aes(
-                    xmin = start, xmax = end,
-                    ymin = y_level - 0.35, ymax = y_level + 0.35,
-                    fill = .data[[color_by]]
-                ),
-                color = panel$outline_color %||% "grey20",
-                linewidth = 0.2,
-                na.rm = TRUE
-            ) +
-                ggplot2::scale_fill_manual(values = color_map, na.value = "grey60")
+        # Intervals with direction: draw as arrows (triangles)
+        draw_arrows <- show_direction && has_direction
+        if (draw_arrows) {
+            arrows_df <- intervals[!is.na(intervals$.direction), , drop = FALSE]
+            if (nrow(arrows_df) > 0) {
+                # Forward (1): arrow from start to end; Reverse (-1): arrow from end to start
+                arrows_df$x_from <- ifelse(arrows_df$.direction == 1, arrows_df$start, arrows_df$end)
+                arrows_df$x_to <- ifelse(arrows_df$.direction == 1, arrows_df$end, arrows_df$start)
+                if (nchar(color_by) > 0 && color_by %in% names(arrows_df)) {
+                    color_values <- unique(arrows_df[[color_by]])
+                    color_values <- color_values[!is.na(color_values)]
+                    color_map <- resolve_interval_colors(color_values, panel_colors, cfg_colors)
+                    p <- p + ggplot2::geom_segment(
+                        data = arrows_df,
+                        ggplot2::aes(x = x_from, xend = x_to, y = y_level, yend = y_level, color = .data[[color_by]]),
+                        arrow = ggplot2::arrow(length = ggplot2::unit(0.08, "inches"), type = "closed"),
+                        linewidth = 1,
+                        na.rm = TRUE
+                    ) + ggplot2::scale_color_manual(values = color_map, na.value = "grey60")
+                } else {
+                    fill_color <- panel$color %||% "grey60"
+                    p <- p + ggplot2::geom_segment(
+                        data = arrows_df,
+                        ggplot2::aes(x = x_from, xend = x_to, y = y_level, yend = y_level),
+                        arrow = ggplot2::arrow(length = ggplot2::unit(0.08, "inches"), type = "closed"),
+                        color = fill_color,
+                        linewidth = 1,
+                        na.rm = TRUE
+                    )
+                }
+            }
+        }
+
+        # Intervals without direction (or show_direction off): draw as rectangles
+        rect_intervals <- if (draw_arrows && has_direction) {
+            intervals[is.na(intervals$.direction), , drop = FALSE]
         } else {
-            fill_color <- panel$color %||% "grey60"
-            p <- p + ggplot2::geom_rect(
-                data = intervals,
-                ggplot2::aes(
-                    xmin = start, xmax = end,
-                    ymin = y_level - 0.35, ymax = y_level + 0.35
-                ),
-                fill = fill_color,
-                color = panel$outline_color %||% "grey20",
-                linewidth = 0.2,
-                na.rm = TRUE
-            )
+            intervals
+        }
+        if (nrow(rect_intervals) > 0) {
+            if (nchar(color_by) > 0 && color_by %in% names(rect_intervals)) {
+                color_values <- unique(rect_intervals[[color_by]])
+                color_values <- color_values[!is.na(color_values)]
+                color_map <- resolve_interval_colors(color_values, panel_colors, cfg_colors)
+                p <- p + ggplot2::geom_rect(
+                    data = rect_intervals,
+                    ggplot2::aes(
+                        xmin = start, xmax = end,
+                        ymin = y_level - 0.35, ymax = y_level + 0.35,
+                        fill = .data[[color_by]]
+                    ),
+                    color = panel$outline_color %||% "grey20",
+                    linewidth = 0.2,
+                    na.rm = TRUE
+                ) +
+                    ggplot2::scale_fill_manual(values = color_map, na.value = "grey60")
+            } else {
+                fill_color <- panel$color %||% "grey60"
+                p <- p + ggplot2::geom_rect(
+                    data = rect_intervals,
+                    ggplot2::aes(
+                        xmin = start, xmax = end,
+                        ymin = y_level - 0.35, ymax = y_level + 0.35
+                    ),
+                    fill = fill_color,
+                    color = panel$outline_color %||% "grey20",
+                    linewidth = 0.2,
+                    na.rm = TRUE
+                )
+            }
         }
 
         label_field <- panel$label_field %||% ""
@@ -148,6 +191,20 @@ extract_intervals_data <- function(panel, region) {
     }
     if (!"end" %in% names(intervals) && "chromEnd" %in% names(intervals)) {
         intervals$end <- intervals$chromEnd
+    }
+
+    # BED column 6 is strand; if we have 6+ cols and no strand, use 6th column when it looks like strand
+    direction_field <- panel$direction_field %||% "strand"
+    if (!direction_field %in% names(intervals) && ncol(intervals) >= 6) {
+        col6 <- intervals[[6]]
+        if (is.character(col6) && any(col6 %in% c("+", "-"), na.rm = TRUE)) {
+            intervals[[direction_field]] <- col6
+        }
+    }
+
+    # Normalize strand/direction to 1 (forward) or -1 (reverse) for direction arrows
+    if (direction_field %in% names(intervals)) {
+        intervals$.direction <- normalize_strand(intervals[[direction_field]])
     }
 
     if (!all(c("chrom", "start", "end") %in% names(intervals))) {
@@ -246,6 +303,28 @@ assign_interval_levels <- function(intervals) {
     result <- integer(n)
     result[order_idx] <- y_levels
     result
+}
+
+#' Normalize strand/direction to 1 (forward) or -1 (reverse)
+#'
+#' @param x Strand values: "+", "-", 1, -1, "forward", "reverse", etc.
+#' @return Integer vector of 1 or -1, NA for unknown
+#' @keywords internal
+normalize_strand <- function(x) {
+    if (is.null(x) || length(x) == 0) {
+        return(integer(0))
+    }
+    out <- rep(NA_integer_, length(x))
+    forward <- x %in% c("+", 1, "1", "forward", "f", "F")
+    reverse <- x %in% c("-", -1, "-1", "reverse", "r", "R")
+    out[forward] <- 1L
+    out[reverse] <- -1L
+    # Numeric: positive -> forward, negative -> reverse
+    num_x <- suppressWarnings(as.numeric(x))
+    valid_num <- is.finite(num_x) & !forward & !reverse
+    out[valid_num & num_x > 0] <- 1L
+    out[valid_num & num_x < 0] <- -1L
+    out
 }
 
 #' Resolve colors for interval values

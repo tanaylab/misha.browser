@@ -244,6 +244,7 @@ build_config_from_inputs <- function(input, vtracks, panels, colors, vlines, bas
             panel$label_field <- input[[paste0("pnl_intervals_label_", i)]] %||% panel$label_field
             panel$color_by <- input[[paste0("pnl_intervals_color_by_", i)]] %||% panel$color_by
             panel$show_labels <- input[[paste0("pnl_intervals_labels_", i)]] %||% panel$show_labels
+            panel$show_direction <- input[[paste0("pnl_intervals_direction_", i)]] %||% panel$show_direction
             panel$color <- input[[paste0("pnl_intervals_color_", i)]] %||% panel$color
             panel$outline_color <- input[[paste0("pnl_intervals_outline_", i)]] %||% panel$outline_color
 

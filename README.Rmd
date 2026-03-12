@@ -329,6 +329,17 @@ panels:
     height: 1.5
 ```
 
+For directional intervals (e.g. CTCF motifs), use arrows to show orientation:
+
+```yaml
+panels:
+  - name: ctcf_motifs
+    type: intervals
+    intervals: intervs.ctcf_motifs
+    show_direction: true
+    height: 1
+```
+
 | Parameter | Description |
 |-----------|-------------|
 | `intervals` | Misha intervals name (e.g., `intervs.global.rmsk`) |
@@ -342,6 +353,8 @@ panels:
 | `filter_regex` | Regex pattern to match |
 | `label_field` | Column for text labels |
 | `show_labels` | Whether to display labels |
+| `show_direction` | Draw intervals as arrows (triangles) by strand; requires `strand` column (BED col 6 or misha) |
+| `direction_field` | Column name for strand (default: `strand`) |
 
 #### Ideogram Panels
 

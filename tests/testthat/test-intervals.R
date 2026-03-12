@@ -251,7 +251,7 @@ test_that("extract_intervals_data filters to overlapping intervals only", {
     write.table(
         data.frame(
             chrom = c("chr1", "chr1"),
-            start = c(50, 500),   # domain_B (500-600) does not overlap region (100-400)
+            start = c(50, 500), # domain_B (500-600) does not overlap region (100-400)
             end = c(500, 600),
             name = c("domain_A", "domain_B")
         ),
@@ -403,4 +403,76 @@ test_that("render_intervals_panel returns ggplot for invalid region", {
     result <- render_intervals_panel(panel, data.frame(x = 1))
 
     expect_s3_class(result, "ggplot")
+})
+
+# =============================================================================
+# Tests for normalize_strand and show_direction
+# =============================================================================
+
+test_that("normalize_strand converts + and - to 1 and -1", {
+    expect_equal(normalize_strand(c("+", "-")), c(1L, -1L))
+})
+
+test_that("normalize_strand converts numeric 1 and -1", {
+    expect_equal(normalize_strand(c(1, -1)), c(1L, -1L))
+})
+
+test_that("normalize_strand returns NA for unknown values", {
+    result <- normalize_strand(c("+", "?", "-"))
+    expect_equal(result, c(1L, NA_integer_, -1L))
+})
+
+test_that("extract_intervals_data loads and normalizes strand", {
+    temp_file <- tempfile(fileext = ".tsv")
+    write.table(
+        data.frame(
+            chrom = c("chr1", "chr1"),
+            start = c(100, 200),
+            end = c(150, 250),
+            strand = c("+", "-")
+        ),
+        temp_file,
+        sep = "\t",
+        row.names = FALSE
+    )
+
+    panel <- list(source = "file", file = temp_file)
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    result <- extract_intervals_data(panel, region)
+
+    expect_true(".direction" %in% names(result))
+    expect_equal(result$.direction, c(1L, -1L))
+
+    unlink(temp_file)
+})
+
+test_that("render_intervals_panel draws arrows when show_direction and strand present", {
+    temp_file <- tempfile(fileext = ".tsv")
+    write.table(
+        data.frame(
+            chrom = "chr1",
+            start = c(100, 200),
+            end = c(150, 250),
+            strand = c("+", "-")
+        ),
+        temp_file,
+        sep = "\t",
+        row.names = FALSE
+    )
+
+    panel <- list(
+        source = "file",
+        file = temp_file,
+        show_direction = TRUE,
+        color = "steelblue"
+    )
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    result <- render_intervals_panel(panel, region)
+
+    expect_s3_class(result, "ggplot")
+    # Should have geom_segment (arrows) in addition to or instead of geom_rect
+    has_segment <- any(sapply(result$layers, function(l) inherits(l$geom, "GeomSegment")))
+    expect_true(has_segment)
+
+    unlink(temp_file)
 })
