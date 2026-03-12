@@ -324,19 +324,33 @@ panels:
     height: 1.5
 ```
 
-| Parameter       | Description                                        |
-|-----------------|----------------------------------------------------|
-| `intervals`     | Misha intervals name (e.g., `intervs.global.rmsk`) |
-| `source`        | Alternative: `file` to load from a file            |
-| `file`          | Path to BED/TSV file (when `source: file`)         |
-| `color_by`      | Column to map to fill color                        |
-| `colors`        | Named color mapping                                |
-| `outline_color` | Border color for rectangles                        |
-| `filter_field`  | Column to filter on                                |
-| `filter_values` | Values to include (list)                           |
-| `filter_regex`  | Regex pattern to match                             |
-| `label_field`   | Column for text labels                             |
-| `show_labels`   | Whether to display labels                          |
+For directional intervals (e.g. CTCF motifs), use arrows to show
+orientation:
+
+``` yaml
+panels:
+  - name: ctcf_motifs
+    type: intervals
+    intervals: intervs.ctcf_motifs
+    show_direction: true
+    height: 1
+```
+
+| Parameter         | Description                                           |
+|-------------------|-------------------------------------------------------|
+| `intervals`       | Misha intervals name (e.g., `intervs.global.rmsk`)    |
+| `source`          | Alternative: `file` to load from a file               |
+| `file`            | Path to BED/TSV file (when `source: file`)            |
+| `color_by`        | Column to map to fill color                           |
+| `colors`          | Named color mapping                                   |
+| `outline_color`   | Border color for rectangles                           |
+| `filter_field`    | Column to filter on                                   |
+| `filter_values`   | Values to include (list)                              |
+| `filter_regex`    | Regex pattern to match                                |
+| `label_field`     | Column for text labels                                |
+| `show_labels`     | Whether to display labels                             |
+| `show_direction`  | Draw intervals as arrows by strand (e.g. CTCF motifs) |
+| `direction_field` | Column name for strand (default: `strand`)            |
 
 #### Ideogram Panels
 

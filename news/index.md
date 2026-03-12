@@ -4,6 +4,11 @@
 
 ### New Features
 
+- Intervals panels: `show_direction` option to plot intervals as arrows
+  (triangles) by strand, for directional features like CTCF motifs. Uses
+  `strand` column (BED col 6 or misha intervals). `direction_field` to
+  specify custom column name.
+
 - Simplified
   [`browser_add_vtrack()`](https://tanaylab.github.io/misha.browser/reference/browser_add_vtrack.md)
   and YAML vtrack configuration to use a single inferred `expression`

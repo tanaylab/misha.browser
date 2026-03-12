@@ -349,8 +349,10 @@ panels:
 ```
 
 Intervals panels support `source` (`intervals` or `file`), `color_by`,
-`colors`, `outline_color`, `label_field`, `show_labels`, and filtering
-via `filter_field` + `filter_values` or `filter_regex`.
+`colors`, `outline_color`, `label_field`, `show_labels`,
+`show_direction` (arrows by strand for directional intervals like CTCF
+motifs), `direction_field` (default `strand`), and filtering via
+`filter_field` + `filter_values` or `filter_regex`.
 
 ### Ideogram panels
 

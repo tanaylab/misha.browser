@@ -48,7 +48,7 @@ browser_add_panel(
 
 - plot_type:
 
-  Plot type: "line", "area", "point", "histogram"
+  Plot type: "line", "area", "point", "histogram", "segment"
 
 - colors:
 
@@ -64,7 +64,8 @@ browser_add_panel(
 
 - ...:
 
-  Additional panel options
+  Additional panel options (e.g. `iterator` for per-panel iterator
+  override)
 
 ## Value
 
