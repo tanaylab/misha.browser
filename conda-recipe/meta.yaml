@@ -1,0 +1,81 @@
+{% set name = "misha.browser" %}
+{% set version = environ.get("PACKAGE_VERSION", "0.1.1") %}
+
+package:
+  name: r-{{ name|lower }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  number: 0
+  skip: true  # [win]
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  host:
+    - r-base {{ r_base }}.*
+    - r-misha
+    - r-ggplot2 >=3.4.0
+    - r-patchwork
+    - r-data.table
+    - r-dplyr
+    - r-zoo
+    - r-yaml
+    - r-shiny
+    - r-shinywidgets
+    - r-bslib
+    - r-colourpicker
+    - r-shinyjs
+    - r-shinycssloaders
+    - r-rlang
+    - r-cli
+    - r-digest
+    - r-readr
+    - r-scales
+  run:
+    - r-base {{ r_base }}.*
+    - r-misha
+    - r-ggplot2 >=3.4.0
+    - r-patchwork
+    - r-data.table
+    - r-dplyr
+    - r-zoo
+    - r-yaml
+    - r-shiny
+    - r-shinywidgets
+    - r-bslib
+    - r-colourpicker
+    - r-shinyjs
+    - r-shinycssloaders
+    - r-rlang
+    - r-cli
+    - r-digest
+    - r-readr
+    - r-scales
+
+test:
+  commands:
+    - $R -e "library('misha.browser')"
+
+about:
+  home: https://github.com/tanaylab/misha.browser
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Interactive Genome Browser for Misha Tracks
+  description: |
+    A configurable, interactive genome browser built on ggplot2 and
+    patchwork. Provides YAML-based configuration for visualization of
+    misha genomic tracks with support for custom transformations,
+    faceting, vertical line annotations, and gene models. Includes a
+    Shiny application for interactive exploration.
+  dev_url: https://github.com/tanaylab/misha.browser
+  doc_url: https://tanaylab.github.io/misha.browser/
+
+extra:
+  recipe-maintainers:
+    - aviezerl

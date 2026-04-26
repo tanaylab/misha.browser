@@ -12,4 +12,5 @@
 ^\.a5c$
 ^CLAUDE\.md$
 ^benchmarks$
+^conda-recipe$
 ^start_app\.R$
