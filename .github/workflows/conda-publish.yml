@@ -69,18 +69,17 @@ jobs:
 
           if [ ${#PACKAGES[@]} -eq 0 ]; then
             echo "WARNING: No conda packages found in conda-output/"
-            find conda-output/ -type f
-            exit 0
+            find conda-output/ -type f || true
+          else
+            echo "Uploading ${#PACKAGES[@]} package(s):"
+            printf '  %s\n' "${PACKAGES[@]}"
+
+            anaconda -t "$ANACONDA_TOKEN" upload \
+              --user aviezerl \
+              --label main \
+              --force \
+              "${PACKAGES[@]}"
           fi
-
-          echo "Uploading ${#PACKAGES[@]} package(s):"
-          printf '  %s\n' "${PACKAGES[@]}"
-
-          anaconda -t "$ANACONDA_TOKEN" upload \
-            --user aviezerl \
-            --label main \
-            --force \
-            "${PACKAGES[@]}"
 
       - uses: actions/upload-artifact@v4
         if: always()
