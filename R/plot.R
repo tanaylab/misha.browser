@@ -105,9 +105,12 @@ browser_plot <- function(browser, region = NULL, gene = NULL, span = NULL,
 
     # Combine with patchwork
     t2 <- Sys.time()
+    # Apply per-plot theme instead of patchwork `&` because ggplot2 >= 4.0
+    # makes `theme()` an S7 object, which breaks `<patchwork> & <theme>` dispatch
+    # (Ops.S7_object has no method for this pair) on patchwork <= 1.3.0.
+    plots <- lapply(plots, function(p) p + ggplot2::theme(legend.position = "bottom"))
     combined <- patchwork::wrap_plots(plots, ncol = 1) +
-        patchwork::plot_layout(heights = heights, guides = "collect") &
-        ggplot2::theme(legend.position = "bottom")
+        patchwork::plot_layout(heights = heights, guides = "collect")
     timings$combine <- as.numeric(difftime(Sys.time(), t2, units = "secs"))
 
     timings$total <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
