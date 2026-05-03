@@ -656,3 +656,27 @@ test_that("validate_panel preserves show_name = FALSE", {
     result <- validate_panel(panel, 1)
     expect_false(result$show_name)
 })
+
+test_that("validate_panel leaves raw NULL when unset (so global can take over)", {
+    panel <- list(name = "sig", tracks = c("track1"))
+    result <- validate_panel(panel, 1)
+    expect_null(result$raw)
+})
+
+test_that("validate_panel preserves explicit raw = TRUE", {
+    panel <- list(name = "sig", tracks = c("track1"), raw = TRUE)
+    result <- validate_panel(panel, 1)
+    expect_true(result$raw)
+})
+
+test_that("validate_panel preserves explicit raw = FALSE", {
+    panel <- list(name = "sig", tracks = c("track1"), raw = FALSE)
+    result <- validate_panel(panel, 1)
+    expect_false(result$raw)
+})
+
+test_that("validate_panel includes raw in cache signature", {
+    p1 <- validate_panel(list(name = "sig", tracks = c("t1")), 1)
+    p2 <- validate_panel(list(name = "sig", tracks = c("t1"), raw = TRUE), 1)
+    expect_false(identical(p1$._cache_signature, p2$._cache_signature))
+})

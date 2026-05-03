@@ -253,7 +253,8 @@ validate_panel <- function(panel, index) {
             grouping = panel$grouping,
             facet_by = panel$facet_by,
             plot_type = panel$plot_type,
-            smooth_window = panel$smooth_window
+            smooth_window = panel$smooth_window,
+            raw = panel$raw
         ))
     }
 
