@@ -47,6 +47,14 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     color_by <- panel$grouping$color_by %||% "track"
     colors <- get_panel_colors(panel, data, color_by, browser$cfg$colors)
 
+    # Inject panel-name column for synthetic facet (Feature 1)
+    show_name <- isTRUE(panel$show_name %||% TRUE)
+    if (show_name && !is.null(panel$name) && nzchar(panel$name)) {
+        data[["._panel_name"]] <- panel$name
+    } else {
+        show_name <- FALSE
+    }
+
     # Base plot with data
     p <- ggplot2::ggplot(data, ggplot2::aes(x = pos, y = value))
 
@@ -56,11 +64,24 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     # Add data layer based on plot type
     p <- add_data_layer(p, panel, color_by)
 
-    # Apply faceting if specified
-    if (!is.null(panel$facet_by) && panel$facet_by %in% names(data)) {
+    # Apply faceting (Feature 1 panel-name strip + optional facet_by)
+    has_facet_by <- !is.null(panel$facet_by) && panel$facet_by %in% names(data)
+    has_panel_strip <- show_name && "._panel_name" %in% names(data)
+
+    if (has_facet_by && has_panel_strip) {
+        p <- p + ggplot2::facet_grid(
+            stats::as.formula(paste(panel$facet_by, "~ ._panel_name")),
+            scales = "free_y", switch = "y"
+        )
+    } else if (has_facet_by) {
         p <- p + ggplot2::facet_grid(
             stats::as.formula(paste(panel$facet_by, "~ .")),
             scales = "free_y"
+        )
+    } else if (has_panel_strip) {
+        p <- p + ggplot2::facet_grid(
+            ._panel_name ~ .,
+            switch = "y"
         )
     }
 
