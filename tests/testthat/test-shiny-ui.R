@@ -460,3 +460,24 @@ test_that("expand_colors_with_tracks handles NULL panels", {
 
     expect_true("track1" %in% names(result))
 })
+
+# =============================================================================
+# Tests for raw_view checkbox in browser_ui
+# =============================================================================
+
+test_that("browser_ui includes raw_view checkbox", {
+    br <- browser_create()
+    br$cfg$plot$raw <- FALSE
+    ui <- browser_ui(br)
+    html <- as.character(ui)
+    expect_true(grepl('id=\"raw_view\"', html, fixed = TRUE))
+})
+
+test_that("browser_ui raw_view default reflects cfg$plot$raw", {
+    br <- browser_create()
+    br$cfg$plot$raw <- TRUE
+    ui <- browser_ui(br)
+    html <- as.character(ui)
+    # Shiny renders checked checkboxes with checked="checked"
+    expect_true(grepl('raw_view.*checked', html))
+})
