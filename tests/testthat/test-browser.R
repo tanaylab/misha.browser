@@ -312,3 +312,21 @@ test_that("browser_add_vtrack stores shift and dim parameters", {
     expect_equal(vt$sshift, -500)
     expect_equal(vt$eshift, 500)
 })
+
+test_that("browser_add_panel accepts show_name argument", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"), show_name = FALSE)
+    expect_false(br$cfg$panels[[1]]$show_name)
+})
+
+test_that("browser_add_panel accepts raw argument", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"), raw = TRUE)
+    expect_true(br$cfg$panels[[1]]$raw)
+})
+
+test_that("browser_add_panel leaves raw NULL by default", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"))
+    expect_null(br$cfg$panels[[1]]$raw)
+})
