@@ -187,6 +187,17 @@ browser_server <- function(browser) {
             browser_rv(br)
         })
 
+        # Raw view toggle
+        shiny::observeEvent(input$raw_view, {
+            br <- browser_rv()
+            br$state$raw_view <- isTRUE(input$raw_view)
+            browser_rv(br)
+
+            # Visually disable the smooth slider when raw is on (it has no
+            # effect in raw mode — extract_panel_data drops smooth transforms).
+            shinyjs::toggleState("smooth_window", condition = !isTRUE(input$raw_view))
+        }, ignoreNULL = FALSE)
+
         # Extraction mode help
         shiny::observeEvent(input$extraction_help, {
             shiny::showModal(
