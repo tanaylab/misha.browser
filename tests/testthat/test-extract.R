@@ -529,3 +529,153 @@ test_that("extract_panel_data smooths normally when raw is OFF", {
     # signal should differ from any raw value (none of which are ~4 or ~6).
     expect_false(out$t1[3] == raw_values[3])
 })
+
+# Test A: panel$raw = TRUE with global FALSE works end-to-end
+test_that("extract_panel_data uses base iterator when panel$raw=TRUE and global raw=FALSE", {
+    captured <- new.env()
+
+    fake_extract <- function(tracks, region, iterator, colnames) {
+        captured$iterator <- iterator
+        df <- data.frame(
+            chrom = "chr1",
+            start = 1:5, end = 1:5, pos = 1:5,
+            stringsAsFactors = FALSE
+        )
+        df[[colnames[[1]]]] <- c(NA_real_, 2, NA_real_, 4, NA_real_)
+        df
+    }
+
+    testthat::local_mocked_bindings(
+        extract_tracks = fake_extract,
+        resolve_track_specs = function(...) list(
+            exprs = "t1", names = "t1", temp_vtracks = character(0)
+        ),
+        cleanup_temp_vtracks = function(...) invisible(NULL),
+        is_vtrack = function(...) FALSE,
+        cache_exists = function(...) FALSE,
+        cache_get = function(...) NULL,
+        cache_set = function(...) invisible(NULL),
+        add_track_metadata = function(data, panel, track_names) data,
+        .package = "misha.browser"
+    )
+
+    # Global raw = FALSE (and state = NULL), raw comes from panel only
+    cfg <- list(
+        plot = list(extraction_mode = "dynamic_smooth", iterator = 32, target_points = 4000, raw = FALSE),
+        vtracks = list()
+    )
+    br <- list(cfg = cfg, state = list(smooth_window = 100, raw_view = NULL))
+    panel <- list(
+        name = "p",
+        type = "data",
+        tracks = c("t1"),
+        raw = TRUE,
+        transforms = list(list(type = "smooth", window = 50))
+    )
+    region <- data.frame(chrom = "chr1", start = 1, end = 1000)
+
+    out <- extract_panel_data(br, panel, region, use_cache = FALSE)
+
+    # panel$raw = TRUE forces fixed mode, so base iterator (32) must be used
+    expect_equal(captured$iterator, 32)
+    # Smoothing must be skipped: NAs in the raw data are preserved
+    expect_true(any(is.na(out$t1)))
+})
+
+# Test B: per-vtrack smooth transforms are stripped under raw
+test_that("extract_panel_data strips per-vtrack smooth transforms when raw is TRUE", {
+    # Alternating 0/10 pattern: if smooth(window=5) is applied the result is ~4
+    # (mean of 5 values), which differs from both 0 and 10.
+    raw_values <- c(0, 10, 0, 10, 0)
+
+    fake_extract <- function(tracks, region, iterator, colnames) {
+        df <- data.frame(
+            chrom = "chr1",
+            start = seq_len(5), end = seq_len(5), pos = seq_len(5),
+            stringsAsFactors = FALSE
+        )
+        df[[colnames[[1]]]] <- raw_values
+        df
+    }
+
+    testthat::local_mocked_bindings(
+        extract_tracks = fake_extract,
+        resolve_track_specs = function(...) list(
+            exprs = "t1", names = "t1", temp_vtracks = character(0)
+        ),
+        cleanup_temp_vtracks = function(...) invisible(NULL),
+        is_vtrack = function(...) FALSE,
+        cache_exists = function(...) FALSE,
+        cache_get = function(...) NULL,
+        cache_set = function(...) invisible(NULL),
+        add_track_metadata = function(data, panel, track_names) data,
+        .package = "misha.browser"
+    )
+
+    cfg <- list(
+        plot = list(extraction_mode = "fixed", iterator = 1),
+        # vtrack t1 has a smooth(window=5) transform
+        vtracks = list(list(name = "t1", transforms = list(list(type = "smooth", window = 5))))
+    )
+    br <- list(cfg = cfg, state = list(smooth_window = NULL, raw_view = TRUE))
+    panel <- list(
+        name = "p",
+        type = "data",
+        tracks = c("t1"),
+        transforms = list()
+    )
+    region <- data.frame(chrom = "chr1", start = 1, end = 1000)
+
+    out <- extract_panel_data(br, panel, region, use_cache = FALSE)
+
+    # If per-vtrack smooth(5) were applied, all 5 values would collapse to ~4.
+    # With raw=TRUE the smooth is stripped and the alternating pattern is preserved.
+    expect_equal(out$t1, raw_values)
+})
+
+# Test C: cache key differs between raw=TRUE and raw=FALSE
+test_that("extract_panel_data produces distinct cache keys for raw vs non-raw", {
+    captured_keys <- character(0)
+
+    fake_extract <- function(tracks, region, iterator, colnames) {
+        df <- data.frame(
+            chrom = "chr1",
+            start = 1:3, end = 1:3, pos = 1:3,
+            stringsAsFactors = FALSE
+        )
+        df[[colnames[[1]]]] <- c(1, 2, 3)
+        df
+    }
+
+    testthat::local_mocked_bindings(
+        extract_tracks = fake_extract,
+        resolve_track_specs = function(...) list(
+            exprs = "t1", names = "t1", temp_vtracks = character(0)
+        ),
+        cleanup_temp_vtracks = function(...) invisible(NULL),
+        is_vtrack = function(...) FALSE,
+        cache_exists = function(...) FALSE,
+        cache_get = function(...) NULL,
+        cache_set = function(key, value) {
+            captured_keys <<- c(captured_keys, key)
+            invisible(NULL)
+        },
+        add_track_metadata = function(data, panel, track_names) data,
+        .package = "misha.browser"
+    )
+
+    cfg <- list(plot = list(extraction_mode = "fixed", iterator = 32), vtracks = list())
+    region <- data.frame(chrom = "chr1", start = 1, end = 1000)
+    panel <- list(name = "p", type = "data", tracks = c("t1"), transforms = list())
+
+    # Call 1: raw_view = TRUE
+    br_raw <- list(cfg = cfg, state = list(smooth_window = NULL, raw_view = TRUE))
+    extract_panel_data(br_raw, panel, region, use_cache = FALSE)
+
+    # Call 2: raw_view = FALSE
+    br_noraw <- list(cfg = cfg, state = list(smooth_window = NULL, raw_view = FALSE))
+    extract_panel_data(br_noraw, panel, region, use_cache = FALSE)
+
+    expect_length(captured_keys, 2)
+    expect_false(identical(captured_keys[1], captured_keys[2]))
+})
