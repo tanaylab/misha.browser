@@ -1,3 +1,21 @@
+# misha.browser 0.1.2
+
+## New Features
+
+* `browser_add_panel()` gains `show_name` (default `TRUE`), which renders the
+  panel name as a left-side strip label (in addition to the existing
+  `y_title`). Set `show_name = FALSE` to suppress.
+
+* `browser_add_panel()` gains `raw` (default `NULL`, inheriting from
+  `cfg$plot$raw`), which renders the panel without smoothing and surfaces
+  NAs as gaps. Useful for sparse data tracks where smoothing is misleading.
+  Precedence at render time: Shiny `Raw view` checkbox > per-panel `raw`
+  > global `cfg$plot$raw` > `FALSE`.
+
+* Shiny UI gains a "Raw view" checkbox next to the smooth slider. When
+  active, smoothing is skipped session-wide and the smooth slider is
+  visually disabled.
+
 # misha.browser 0.1.1
 
 ## New Features
