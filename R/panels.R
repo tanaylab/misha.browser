@@ -284,16 +284,16 @@ apply_panel_scales <- function(p, panel, x_limits) {
 apply_panel_theme <- function(p, panel) {
     p <- p + ggplot2::theme_bw()
 
-    # Legend
     legend_pos <- if (panel$show_legend %||% TRUE) "bottom" else "none"
-
-    # Y-axis title
     y_title <- panel$y_title %||% ""
 
     p <- p + ggplot2::theme(
         legend.position = legend_pos,
         strip.background = ggplot2::element_rect(fill = "grey95"),
+        strip.background.y = ggplot2::element_rect(fill = "grey90", color = NA),
         strip.text = ggplot2::element_text(size = 11, face = "bold"),
+        strip.text.y.left = ggplot2::element_text(angle = 0, face = "bold", hjust = 1),
+        strip.placement = "outside",
         panel.grid.minor = ggplot2::element_blank(),
         axis.title.x = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_blank(),
