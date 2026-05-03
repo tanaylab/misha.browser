@@ -212,6 +212,7 @@ validate_panel <- function(panel, index) {
         panel$linewidth <- panel$linewidth %||% .DEFAULT_LINEWIDTH
         panel$height <- panel$height %||% .DEFAULT_DATA_PANEL_HEIGHT
         panel$show_legend <- panel$show_legend %||% TRUE
+        panel$show_name <- panel$show_name %||% TRUE
 
         # Transforms default to empty list
         panel$transforms <- panel$transforms %||% list()

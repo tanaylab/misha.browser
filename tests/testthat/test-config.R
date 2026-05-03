@@ -644,3 +644,15 @@ test_that("validate_vtrack omits signature without transforms", {
 
     expect_null(result$._transform_signature)
 })
+
+test_that("validate_panel defaults show_name to TRUE for data panels", {
+    panel <- list(name = "sig", tracks = c("track1"))
+    result <- validate_panel(panel, 1)
+    expect_true(result$show_name)
+})
+
+test_that("validate_panel preserves show_name = FALSE", {
+    panel <- list(name = "sig", tracks = c("track1"), show_name = FALSE)
+    result <- validate_panel(panel, 1)
+    expect_false(result$show_name)
+})
