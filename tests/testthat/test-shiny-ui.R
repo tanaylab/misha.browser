@@ -479,5 +479,5 @@ test_that("browser_ui raw_view default reflects cfg$plot$raw", {
     ui <- browser_ui(br)
     html <- as.character(ui)
     # Shiny renders checked checkboxes with checked="checked"
-    expect_true(grepl('raw_view.*checked', html))
+    expect_true(grepl('id="raw_view"[^>]*checked', html))
 })

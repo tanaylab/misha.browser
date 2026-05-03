@@ -163,10 +163,13 @@ browser_ui <- function(browser) {
                         value = cfg$ui$smooth_window_default %||% 10,
                         min = 1, step = 5, width = "100%"
                     ),
-                    shiny::checkboxInput(
-                        inputId = "raw_view",
-                        label = "Raw (no smoothing, NAs as gaps)",
-                        value = isTRUE(cfg$plot$raw)
+                    shiny::tags$div(
+                        title = "No smoothing; NAs render as gaps",
+                        shiny::checkboxInput(
+                            inputId = "raw_view",
+                            label = "Raw view",
+                            value = isTRUE(cfg$plot$raw)
+                        )
                     )
                 )
             ),
