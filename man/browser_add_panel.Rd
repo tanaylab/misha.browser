@@ -15,7 +15,7 @@ browser_add_panel(
   colors = NULL,
   ylim = NULL,
   height = 2,
-  show_name = TRUE,
+  show_name = FALSE,
   raw = NULL,
   ...
 )
@@ -41,7 +41,7 @@ browser_add_panel(
 
 \item{height}{Relative height}
 
-\item{show_name}{Logical, render the panel name as a left-side strip label (default TRUE)}
+\item{show_name}{Logical, render the panel name as a bold left-side strip label (default FALSE)}
 
 \item{raw}{Logical or NULL. If TRUE, render without smoothing and with NAs as gaps. NULL inherits from cfg$plot$raw.}
 

@@ -148,3 +148,11 @@ test_that("data panel does NOT add ._panel_name when show_name = FALSE", {
     expect_false("._panel_name" %in% names(p$data))
     expect_s3_class(p$facet, "FacetNull")
 })
+
+test_that("apply_panel_theme sets legend title to panel name", {
+    panel <- list(name = "my_signal", show_legend = TRUE)
+    p <- ggplot2::ggplot()
+    p <- apply_panel_theme(p, panel)
+    # ggplot stores labs in p$labels; the color label should be panel$name
+    expect_equal(p$labels$colour %||% p$labels$color, "my_signal")
+})

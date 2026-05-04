@@ -410,7 +410,7 @@ browser_save <- function(browser, file) {
 #' @param colors Named vector of colors
 #' @param ylim Y-axis limits
 #' @param height Relative height
-#' @param show_name Logical, render the panel name as a left-side strip label (default TRUE)
+#' @param show_name Logical, render the panel name as a bold left-side strip label (default FALSE)
 #' @param raw Logical or NULL. If TRUE, render without smoothing and with NAs as gaps. NULL inherits from cfg$plot$raw.
 #' @param ... Additional panel options (e.g. `iterator` for per-panel iterator override)
 #' @return Updated browser object
@@ -423,7 +423,7 @@ browser_add_panel <- function(browser, name, tracks = NULL,
                               colors = NULL,
                               ylim = NULL,
                               height = 2,
-                              show_name = TRUE,
+                              show_name = FALSE,
                               raw = NULL,
                               ...) {
     # Auto-create vtracks for each track

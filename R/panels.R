@@ -299,7 +299,7 @@ apply_panel_theme <- function(p, panel) {
         axis.text.x = ggplot2::element_blank(),
         axis.ticks.x = ggplot2::element_blank(),
         plot.margin = ggplot2::margin(b = 2, t = 2)
-    ) + ggplot2::labs(y = y_title, color = NULL)
+    ) + ggplot2::labs(y = y_title, color = panel$name)
 
     p
 }
