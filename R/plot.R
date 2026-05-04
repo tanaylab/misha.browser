@@ -71,6 +71,7 @@ browser_plot <- function(browser, region = NULL, gene = NULL, span = NULL,
     # Render each panel
     plots <- list()
     heights <- numeric()
+    panel_types <- character()
     panel_timings <- list()
 
     for (panel in browser$cfg$panels) {
@@ -87,6 +88,7 @@ browser_plot <- function(browser, region = NULL, gene = NULL, span = NULL,
         if (!is.null(p)) {
             plots <- c(plots, list(p))
             heights <- c(heights, panel$height %||% 1)
+            panel_types <- c(panel_types, panel$type %||% "data")
         }
     }
     timings$panels <- panel_timings
@@ -97,18 +99,21 @@ browser_plot <- function(browser, region = NULL, gene = NULL, span = NULL,
             ggplot2::labs(title = "No panels to display"))
     }
 
-    # Add x-axis label to the last plot
-    plots[[length(plots)]] <- add_x_axis(
-        plots[[length(plots)]],
-        region
-    )
+    # Add x-axis label to the last plot, unless the last panel is a ggplot
+    # (which has its own axis styling that we should not override).
+    last_idx <- length(plots)
+    if (panel_types[last_idx] != "ggplot") {
+        plots[[last_idx]] <- add_x_axis(plots[[last_idx]], region)
+    }
 
     # Combine with patchwork
     t2 <- Sys.time()
     # Apply per-plot theme instead of patchwork `&` because ggplot2 >= 4.0
     # makes `theme()` an S7 object, which breaks `<patchwork> & <theme>` dispatch
     # (Ops.S7_object has no method for this pair) on patchwork <= 1.3.0.
-    plots <- lapply(plots, function(p) p + ggplot2::theme(legend.position = "bottom"))
+    plots <- mapply(function(p, t) {
+        if (t == "ggplot") p else p + ggplot2::theme(legend.position = "bottom")
+    }, plots, panel_types, SIMPLIFY = FALSE)
     combined <- patchwork::wrap_plots(plots, ncol = 1) +
         patchwork::plot_layout(heights = heights, guides = "collect")
     timings$combine <- as.numeric(difftime(Sys.time(), t2, units = "secs"))
@@ -154,6 +159,7 @@ render_panel <- function(browser, panel, region, vlines_data,
         "annotation" = render_annotation_panel(panel, region, vlines_data),
         "ideogram" = render_ideogram_panel(panel, region),
         "intervals" = render_intervals_panel(panel, region, vlines_data),
+        "ggplot" = render_ggplot_panel(panel, region),
         {
             cli::cli_warn("Unknown panel type: {type}")
             NULL
@@ -161,7 +167,7 @@ render_panel <- function(browser, panel, region, vlines_data,
     )
 
     highlight <- browser$state$highlight
-    if (!is.null(p) && !is.null(highlight) && nrow(highlight) > 0) {
+    if (type != "ggplot" && !is.null(p) && !is.null(highlight) && nrow(highlight) > 0) {
         p <- add_highlight_overlay(p, highlight)
     }
 

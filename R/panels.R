@@ -389,6 +389,20 @@ add_hlines_to_plot <- function(p, panel, data, browser = NULL) {
     p
 }
 
+#' Render a static ggplot panel
+#'
+#' Returns the user-supplied ggplot object as-is. The plot is static,
+#' does not depend on the genomic region, and does not get vline /
+#' highlight overlays.
+#'
+#' @param panel Panel configuration (must have `plot` field with a ggplot)
+#' @param region Viewing region (unused; accepted for signature consistency)
+#' @return The ggplot object stored in `panel$plot`
+#' @keywords internal
+render_ggplot_panel <- function(panel, region) {
+    panel$plot
+}
+
 #' Compute a genome-wide quantile for a track
 #'
 #' Extracts the specified track across the full genome, applies the panel's

@@ -156,3 +156,15 @@ test_that("apply_panel_theme sets legend title to panel name", {
     # ggplot stores labs in p$labels; the color label should be panel$name
     expect_equal(p$labels$colour %||% p$labels$color, "my_signal")
 })
+
+# =============================================================================
+# Tests for ggplot panel rendering (Feature 2)
+# =============================================================================
+
+test_that("render_ggplot_panel returns the panel's plot as-is", {
+    p_in <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p_in)
+    region <- data.frame(chrom = "chr1", start = 1, end = 100)
+    p_out <- render_ggplot_panel(panel, region)
+    expect_identical(p_out, p_in)
+})
