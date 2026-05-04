@@ -99,11 +99,14 @@ browser_plot <- function(browser, region = NULL, gene = NULL, span = NULL,
             ggplot2::labs(title = "No panels to display"))
     }
 
-    # Add x-axis label to the last plot, unless the last panel is a ggplot
-    # (which has its own axis styling that we should not override).
-    last_idx <- length(plots)
-    if (panel_types[last_idx] != "ggplot") {
-        plots[[last_idx]] <- add_x_axis(plots[[last_idx]], region)
+    # Add x-axis label to the last non-ggplot panel. ggplot panels carry
+    # their own axis styling and aren't tied to genomic coordinates, so
+    # the genomic axis should land on the last data/annotation/intervals/
+    # ideogram panel. If every panel is ggplot, skip silently.
+    non_ggplot <- which(panel_types != "ggplot")
+    if (length(non_ggplot) > 0) {
+        last_genomic_idx <- max(non_ggplot)
+        plots[[last_genomic_idx]] <- add_x_axis(plots[[last_genomic_idx]], region)
     }
 
     # Combine with patchwork
