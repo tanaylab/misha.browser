@@ -2,9 +2,21 @@
 
 ## New Features
 
-* `browser_add_panel()` gains `show_name` (default `TRUE`), which renders the
-  panel name as a left-side strip label (in addition to the existing
-  `y_title`). Set `show_name = FALSE` to suppress.
+* The panel `name` now appears as the legend title for data panels
+  (e.g. a panel named `"signal"` shows "signal" above the track-name
+  list in the legend).
+
+* `browser_add_panel()` gains `show_name` (default `FALSE`), which
+  renders the panel name as a bold left-side strip label (UCSC-style).
+  Off by default to avoid visual noise; opt in with `show_name = TRUE`.
+
+* `browser_add_panel()` accepts `type = "ggplot"` and a `plot`
+  argument to render an arbitrary user-supplied static ggplot object
+  as a panel. Useful for sample-metadata heatmaps, logos, and other
+  annotations that don't depend on the genomic region. The plot is
+  static (does not re-render on navigation), gets no vline/highlight
+  overlay, and cannot be saved to YAML —  `browser_save_config()`
+  drops ggplot panels with a warning listing the dropped names.
 
 * `browser_add_panel()` gains `raw` (default `NULL`, inheriting from
   `cfg$plot$raw`), which renders the panel without smoothing and surfaces
