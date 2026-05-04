@@ -523,8 +523,31 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
 #' browser_save_config(browser$cfg, "updated_config.yaml")
 #' }
 browser_save_config <- function(cfg, file) {
+    # Drop ggplot panels (not YAML-serializable) and warn the user.
+    # Work on a shallow copy so the caller's cfg is returned untouched.
+    cfg_to_save <- cfg
+    if (length(cfg_to_save$panels %||% list()) > 0) {
+        is_ggplot <- vapply(
+            cfg_to_save$panels,
+            function(p) identical(p$type, "ggplot"),
+            logical(1)
+        )
+        if (any(is_ggplot)) {
+            dropped <- vapply(
+                cfg_to_save$panels[is_ggplot],
+                function(p) p$name %||% "<unnamed>",
+                character(1)
+            )
+            cli::cli_warn(c(
+                "Dropped {sum(is_ggplot)} ggplot panel{?s} from saved YAML config (not serializable):",
+                "*" = "{paste(dropped, collapse = ', ')}"
+            ))
+            cfg_to_save$panels <- cfg_to_save$panels[!is_ggplot]
+        }
+    }
+
     # Remove internal fields before saving
-    cfg_clean <- clean_config_for_export(cfg)
+    cfg_clean <- clean_config_for_export(cfg_to_save)
 
     yaml::write_yaml(cfg_clean, file)
     cli::cli_alert_success("Configuration saved to {file}")

@@ -716,3 +716,53 @@ test_that("validate_panel does not compute cache signature for ggplot panels", {
     result <- validate_panel(panel, 1)
     expect_null(result$._cache_signature)
 })
+
+test_that("browser_save_config drops ggplot panels with a warning", {
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2),
+        list(name = "meta", type = "ggplot", plot = p_user, height = 1)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    expect_warning(
+        browser_save_config(cfg, tmp),
+        "ggplot panel"
+    )
+
+    # Reload and verify only the data panel made it
+    saved <- yaml::read_yaml(tmp)
+    expect_length(saved$panels, 1)
+    expect_equal(saved$panels[[1]]$name, "sig")
+})
+
+test_that("browser_save_config saves cleanly when there are no ggplot panels", {
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    expect_no_warning(browser_save_config(cfg, tmp))
+})
+
+test_that("browser_save_config returns the original cfg unchanged (invisible)", {
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2),
+        list(name = "meta", type = "ggplot", plot = p_user, height = 1)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    suppressWarnings(returned <- browser_save_config(cfg, tmp))
+    expect_length(returned$panels, 2)
+    expect_equal(returned$panels[[2]]$type, "ggplot")
+})
