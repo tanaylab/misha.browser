@@ -244,6 +244,14 @@ validate_panel <- function(panel, index) {
     } else if (panel$type == "ideogram") {
         panel$highlight_current <- panel$highlight_current %||% TRUE
         panel$height <- panel$height %||% .DEFAULT_IDEOGRAM_HEIGHT
+    } else if (panel$type == "ggplot") {
+        if (is.null(panel$plot) || !inherits(panel$plot, "ggplot")) {
+            cli::cli_abort(
+                "Panel '{panel$name}' has type='ggplot' but `plot` is missing or not a ggplot object."
+            )
+        }
+        panel$height <- panel$height %||% .DEFAULT_DATA_PANEL_HEIGHT
+        panel$show_name <- panel$show_name %||% FALSE
     }
 
     # Pre-compute cache signature for data panels (avoids repeated digest calls)

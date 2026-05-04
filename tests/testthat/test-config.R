@@ -686,3 +686,33 @@ test_that("validate_panel includes raw in cache signature", {
     p2 <- validate_panel(list(name = "sig", tracks = c("t1"), raw = TRUE), 1)
     expect_false(identical(p1$._cache_signature, p2$._cache_signature))
 })
+
+# =============================================================================
+# Tests for ggplot panel type (Feature 2)
+# =============================================================================
+
+test_that("validate_panel accepts a valid ggplot panel", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p)
+    result <- validate_panel(panel, 1)
+    expect_equal(result$type, "ggplot")
+    expect_s3_class(result$plot, "ggplot")
+    expect_equal(result$height, 2)  # .DEFAULT_DATA_PANEL_HEIGHT
+})
+
+test_that("validate_panel rejects ggplot panel with missing plot", {
+    panel <- list(name = "meta", type = "ggplot")
+    expect_error(validate_panel(panel, 1), "missing or not a ggplot")
+})
+
+test_that("validate_panel rejects ggplot panel with non-ggplot plot", {
+    panel <- list(name = "meta", type = "ggplot", plot = "not a plot")
+    expect_error(validate_panel(panel, 1), "missing or not a ggplot")
+})
+
+test_that("validate_panel does not compute cache signature for ggplot panels", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p)
+    result <- validate_panel(panel, 1)
+    expect_null(result$._cache_signature)
+})

@@ -402,7 +402,9 @@ browser_save <- function(browser, file) {
 #'
 #' @param browser Browser object
 #' @param name Panel name
+#' @param type Panel type. One of "data" (default), "annotation", "intervals", "ideogram", or "ggplot".
 #' @param tracks Character vector of track names
+#' @param plot A ggplot object. Only used when `type = "ggplot"`. The plot is rendered as-is (static, region-independent, no vline/highlight overlays). Cannot be saved to YAML.
 #' @param grouping List with color_by, pattern, overrides
 #' @param facet_by Variable to facet by (from grouping pattern)
 #' @param transforms List of transforms to apply
@@ -425,8 +427,27 @@ browser_add_panel <- function(browser, name, tracks = NULL,
                               height = 2,
                               show_name = FALSE,
                               raw = NULL,
+                              type = "data",
+                              plot = NULL,
                               ...) {
-    # Auto-create vtracks for each track
+    if (type == "ggplot") {
+        panel <- list(
+            name = name,
+            type = "ggplot",
+            plot = plot,
+            height = height,
+            show_name = show_name
+        )
+        extra <- list(...)
+        for (opt in names(extra)) {
+            panel[[opt]] <- extra[[opt]]
+        }
+        panel <- validate_panel(panel, length(browser$cfg$panels) + 1)
+        browser$cfg$panels <- c(browser$cfg$panels, list(panel))
+        return(browser)
+    }
+
+    # Auto-create vtracks for each track (data panels only)
     if (!is.null(tracks) && length(tracks) > 0) {
         existing_vtrack_names <- vapply(
             browser$cfg$vtracks %||% list(),
@@ -452,7 +473,7 @@ browser_add_panel <- function(browser, name, tracks = NULL,
 
     panel <- list(
         name = name,
-        type = "data",
+        type = type,
         tracks = tracks,
         grouping = grouping,
         facet_by = facet_by,
