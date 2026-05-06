@@ -233,8 +233,21 @@ validate_panel <- function(panel, index) {
         panel$show_strand_arrows <- panel$show_strand_arrows %||% TRUE
         panel$height <- panel$height %||% .DEFAULT_ANNOTATION_HEIGHT
     } else if (panel$type == "intervals") {
+        # Auto-detect df source if a data frame was passed via `df` / `intervals`
+        if (is.data.frame(panel$df) && is.null(panel$._df)) {
+            panel$._df <- panel$df
+            panel$df <- NULL
+            panel$source <- "df"
+        } else if (is.data.frame(panel$intervals)) {
+            panel$._df <- panel$intervals
+            panel$intervals <- NULL
+            panel$source <- "df"
+        }
+
         panel$source <- panel$source %||% "intervals"
-        panel$intervals <- panel$intervals %||% panel$source
+        if (panel$source != "df") {
+            panel$intervals <- panel$intervals %||% panel$source
+        }
         panel$color <- panel$color %||% "grey60"
         panel$outline_color <- panel$outline_color %||% "grey20"
         panel$height <- panel$height %||% .DEFAULT_INTERVALS_HEIGHT
@@ -563,6 +576,22 @@ browser_save_config <- function(cfg, file) {
 #' @return Cleaned configuration list
 #' @keywords internal
 clean_config_for_export <- function(cfg) {
+    # Drop runtime-only intervals panels (data-frame source) — they cannot be
+    # serialized to YAML and would fail validation on reload.
+    if (length(cfg$panels) > 0) {
+        is_df_panel <- vapply(cfg$panels, function(p) {
+            isTRUE(identical(p$type, "intervals")) &&
+                isTRUE(identical(p$source, "df"))
+        }, logical(1))
+        if (any(is_df_panel)) {
+            dropped <- vapply(cfg$panels[is_df_panel], function(p) p$name %||% "", character(1))
+            cli::cli_warn(
+                "Skipping intervals panel{?s} with in-memory data frame source: {.val {dropped}}"
+            )
+            cfg$panels <- cfg$panels[!is_df_panel]
+        }
+    }
+
     # Remove internal fields that start with .
     remove_internal <- function(x) {
         if (is.list(x)) {

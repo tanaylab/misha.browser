@@ -341,7 +341,14 @@ validate_panel_full <- function(panel, index, vtrack_names = character(0)) {
     # Intervals panel validation
     if (!is.null(panel$type) && panel$type == "intervals") {
         source_type <- panel$source %||% "intervals"
-        if (source_type == "file") {
+        if (source_type == "df") {
+            df <- panel$._df %||% panel$df
+            if (!is.data.frame(df)) {
+                errors[[paste0(prefix, "df")]] <- "Intervals data frame is required for source = 'df'"
+            } else if (!all(c("chrom", "start", "end") %in% names(df))) {
+                errors[[paste0(prefix, "df")]] <- "Intervals data frame must have chrom, start, end columns"
+            }
+        } else if (source_type == "file") {
             file_path <- panel$file %||% ""
             if (is_empty(file_path)) {
                 errors[[paste0(prefix, "file")]] <- "Intervals file path is required"
