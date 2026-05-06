@@ -70,3 +70,54 @@ test_that("add_highlight_overlay returns unchanged plot for non-finite values", 
     # Should return the plot unchanged
     expect_s3_class(result, "ggplot")
 })
+
+test_that("browser_plot handles a ggplot panel without errors", {
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    br <- browser_create() |>
+        browser_add_panel(name = "meta", type = "ggplot", plot = p_user, height = 1)
+    # Need a region to plot. Set one in state.
+    br$state$current_region <- data.frame(chrom = "chr1", start = 1, end = 1000, stringsAsFactors = FALSE)
+    expect_no_error(p <- browser_plot(br))
+    # patchwork object
+    expect_s3_class(p, "patchwork")
+})
+
+test_that("browser_plot puts x-axis on last non-ggplot panel even when ggplot is trailing", {
+    skip_if_not_installed("ggplot2")
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    br <- browser_create() |>
+        browser_add_panel(name = "meta_top", type = "ggplot", plot = p_user, height = 1) |>
+        browser_add_panel(name = "sig", tracks = c("t1"), height = 2) |>
+        browser_add_panel(name = "meta_bottom", type = "ggplot", plot = p_user, height = 1)
+    br$state$current_region <- data.frame(chrom = "chr1", start = 1, end = 1000, stringsAsFactors = FALSE)
+
+    # extract_panel_data will fail on a fake track without a misha db, so stub it.
+    testthat::local_mocked_bindings(
+        extract_panel_data = function(browser, panel, region, use_cache = TRUE) {
+            data.frame(
+                chrom = "chr1",
+                start = seq(1, 1000, by = 100),
+                end = seq(100, 1099, by = 100),
+                pos = seq(50, 1049, by = 100),
+                t1 = runif(10),
+                track = "t1",
+                source = "t1",
+                stringsAsFactors = FALSE
+            )
+        },
+        .package = "misha.browser"
+    )
+
+    expect_no_error(p <- browser_plot(br))
+    expect_s3_class(p, "patchwork")
+})
+
+test_that("browser_plot does not error when all panels are ggplot", {
+    skip_if_not_installed("ggplot2")
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    br <- browser_create() |>
+        browser_add_panel(name = "a", type = "ggplot", plot = p_user, height = 1) |>
+        browser_add_panel(name = "b", type = "ggplot", plot = p_user, height = 1)
+    br$state$current_region <- data.frame(chrom = "chr1", start = 1, end = 1000, stringsAsFactors = FALSE)
+    expect_no_error(p <- browser_plot(br))
+})

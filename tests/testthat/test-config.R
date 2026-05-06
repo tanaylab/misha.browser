@@ -644,3 +644,125 @@ test_that("validate_vtrack omits signature without transforms", {
 
     expect_null(result$._transform_signature)
 })
+
+test_that("validate_panel defaults show_name to FALSE for data panels", {
+    panel <- list(name = "sig", tracks = c("track1"))
+    result <- validate_panel(panel, 1)
+    expect_false(result$show_name)
+})
+
+test_that("validate_panel preserves show_name = FALSE", {
+    panel <- list(name = "sig", tracks = c("track1"), show_name = FALSE)
+    result <- validate_panel(panel, 1)
+    expect_false(result$show_name)
+})
+
+test_that("validate_panel preserves show_name = TRUE", {
+    panel <- list(name = "sig", tracks = c("track1"), show_name = TRUE)
+    result <- validate_panel(panel, 1)
+    expect_true(result$show_name)
+})
+
+test_that("validate_panel leaves raw NULL when unset (so global can take over)", {
+    panel <- list(name = "sig", tracks = c("track1"))
+    result <- validate_panel(panel, 1)
+    expect_null(result$raw)
+})
+
+test_that("validate_panel preserves explicit raw = TRUE", {
+    panel <- list(name = "sig", tracks = c("track1"), raw = TRUE)
+    result <- validate_panel(panel, 1)
+    expect_true(result$raw)
+})
+
+test_that("validate_panel preserves explicit raw = FALSE", {
+    panel <- list(name = "sig", tracks = c("track1"), raw = FALSE)
+    result <- validate_panel(panel, 1)
+    expect_false(result$raw)
+})
+
+test_that("validate_panel includes raw in cache signature", {
+    p1 <- validate_panel(list(name = "sig", tracks = c("t1")), 1)
+    p2 <- validate_panel(list(name = "sig", tracks = c("t1"), raw = TRUE), 1)
+    expect_false(identical(p1$._cache_signature, p2$._cache_signature))
+})
+
+# =============================================================================
+# Tests for ggplot panel type (Feature 2)
+# =============================================================================
+
+test_that("validate_panel accepts a valid ggplot panel", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p)
+    result <- validate_panel(panel, 1)
+    expect_equal(result$type, "ggplot")
+    expect_s3_class(result$plot, "ggplot")
+    expect_equal(result$height, 2)  # .DEFAULT_DATA_PANEL_HEIGHT
+})
+
+test_that("validate_panel rejects ggplot panel with missing plot", {
+    panel <- list(name = "meta", type = "ggplot")
+    expect_error(validate_panel(panel, 1), "missing or not a ggplot")
+})
+
+test_that("validate_panel rejects ggplot panel with non-ggplot plot", {
+    panel <- list(name = "meta", type = "ggplot", plot = "not a plot")
+    expect_error(validate_panel(panel, 1), "missing or not a ggplot")
+})
+
+test_that("validate_panel does not compute cache signature for ggplot panels", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p)
+    result <- validate_panel(panel, 1)
+    expect_null(result$._cache_signature)
+})
+
+test_that("browser_save_config drops ggplot panels with a warning", {
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2),
+        list(name = "meta", type = "ggplot", plot = p_user, height = 1)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    expect_warning(
+        browser_save_config(cfg, tmp),
+        "ggplot panel"
+    )
+
+    # Reload and verify only the data panel made it
+    saved <- yaml::read_yaml(tmp)
+    expect_length(saved$panels, 1)
+    expect_equal(saved$panels[[1]]$name, "sig")
+})
+
+test_that("browser_save_config saves cleanly when there are no ggplot panels", {
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    expect_no_warning(browser_save_config(cfg, tmp))
+})
+
+test_that("browser_save_config returns the original cfg unchanged (invisible)", {
+    p_user <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    cfg <- browser_create()$cfg
+    cfg$panels <- list(
+        list(name = "sig", type = "data", tracks = "t1", height = 2),
+        list(name = "meta", type = "ggplot", plot = p_user, height = 1)
+    )
+
+    tmp <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp), add = TRUE)
+
+    suppressWarnings(returned <- browser_save_config(cfg, tmp))
+    expect_length(returned$panels, 2)
+    expect_equal(returned$panels[[2]]$type, "ggplot")
+})

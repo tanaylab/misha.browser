@@ -212,6 +212,7 @@ validate_panel <- function(panel, index) {
         panel$linewidth <- panel$linewidth %||% .DEFAULT_LINEWIDTH
         panel$height <- panel$height %||% .DEFAULT_DATA_PANEL_HEIGHT
         panel$show_legend <- panel$show_legend %||% TRUE
+        panel$show_name <- panel$show_name %||% FALSE
 
         # Transforms default to empty list
         panel$transforms <- panel$transforms %||% list()
@@ -243,6 +244,14 @@ validate_panel <- function(panel, index) {
     } else if (panel$type == "ideogram") {
         panel$highlight_current <- panel$highlight_current %||% TRUE
         panel$height <- panel$height %||% .DEFAULT_IDEOGRAM_HEIGHT
+    } else if (panel$type == "ggplot") {
+        if (is.null(panel$plot) || !inherits(panel$plot, "ggplot")) {
+            cli::cli_abort(
+                "Panel '{panel$name}' has type='ggplot' but `plot` is missing or not a ggplot object."
+            )
+        }
+        panel$height <- panel$height %||% .DEFAULT_DATA_PANEL_HEIGHT
+        panel$show_name <- panel$show_name %||% FALSE
     }
 
     # Pre-compute cache signature for data panels (avoids repeated digest calls)
@@ -252,7 +261,8 @@ validate_panel <- function(panel, index) {
             grouping = panel$grouping,
             facet_by = panel$facet_by,
             plot_type = panel$plot_type,
-            smooth_window = panel$smooth_window
+            smooth_window = panel$smooth_window,
+            raw = panel$raw
         ))
     }
 
@@ -513,8 +523,31 @@ browser_create_config <- function(misha_root = NULL, title = "Genome Browser") {
 #' browser_save_config(browser$cfg, "updated_config.yaml")
 #' }
 browser_save_config <- function(cfg, file) {
+    # Drop ggplot panels (not YAML-serializable) and warn the user.
+    # Work on a shallow copy so the caller's cfg is returned untouched.
+    cfg_to_save <- cfg
+    if (length(cfg_to_save$panels %||% list()) > 0) {
+        is_ggplot <- vapply(
+            cfg_to_save$panels,
+            function(p) identical(p$type, "ggplot"),
+            logical(1)
+        )
+        if (any(is_ggplot)) {
+            dropped <- vapply(
+                cfg_to_save$panels[is_ggplot],
+                function(p) p$name %||% "<unnamed>",
+                character(1)
+            )
+            cli::cli_warn(c(
+                "Dropped {sum(is_ggplot)} ggplot panel{?s} from saved YAML config (not serializable):",
+                "*" = "{paste(dropped, collapse = ', ')}"
+            ))
+            cfg_to_save$panels <- cfg_to_save$panels[!is_ggplot]
+        }
+    }
+
     # Remove internal fields before saving
-    cfg_clean <- clean_config_for_export(cfg)
+    cfg_clean <- clean_config_for_export(cfg_to_save)
 
     yaml::write_yaml(cfg_clean, file)
     cli::cli_alert_success("Configuration saved to {file}")

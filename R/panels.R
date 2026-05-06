@@ -47,6 +47,14 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     color_by <- panel$grouping$color_by %||% "track"
     colors <- get_panel_colors(panel, data, color_by, browser$cfg$colors)
 
+    # Inject panel-name column for synthetic facet (Feature 1)
+    show_name <- isTRUE(panel$show_name %||% TRUE)
+    if (show_name && !is.null(panel$name) && nzchar(panel$name)) {
+        data[["._panel_name"]] <- panel$name
+    } else {
+        show_name <- FALSE
+    }
+
     # Base plot with data
     p <- ggplot2::ggplot(data, ggplot2::aes(x = pos, y = value))
 
@@ -56,11 +64,24 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     # Add data layer based on plot type
     p <- add_data_layer(p, panel, color_by)
 
-    # Apply faceting if specified
-    if (!is.null(panel$facet_by) && panel$facet_by %in% names(data)) {
+    # Apply faceting (Feature 1 panel-name strip + optional facet_by)
+    has_facet_by <- !is.null(panel$facet_by) && panel$facet_by %in% names(data)
+    has_panel_strip <- show_name && "._panel_name" %in% names(data)
+
+    if (has_facet_by && has_panel_strip) {
+        p <- p + ggplot2::facet_grid(
+            stats::as.formula(paste(panel$facet_by, "~ ._panel_name")),
+            scales = "free_y", switch = "y"
+        )
+    } else if (has_facet_by) {
         p <- p + ggplot2::facet_grid(
             stats::as.formula(paste(panel$facet_by, "~ .")),
             scales = "free_y"
+        )
+    } else if (has_panel_strip) {
+        p <- p + ggplot2::facet_grid(
+            ._panel_name ~ .,
+            switch = "y"
         )
     }
 
@@ -263,22 +284,22 @@ apply_panel_scales <- function(p, panel, x_limits) {
 apply_panel_theme <- function(p, panel) {
     p <- p + ggplot2::theme_bw()
 
-    # Legend
     legend_pos <- if (panel$show_legend %||% TRUE) "bottom" else "none"
-
-    # Y-axis title
     y_title <- panel$y_title %||% ""
 
     p <- p + ggplot2::theme(
         legend.position = legend_pos,
         strip.background = ggplot2::element_rect(fill = "grey95"),
+        strip.background.y = ggplot2::element_rect(fill = "grey90", color = NA),
         strip.text = ggplot2::element_text(size = 11, face = "bold"),
+        strip.text.y.left = ggplot2::element_text(angle = 0, face = "bold", hjust = 1),
+        strip.placement = "outside",
         panel.grid.minor = ggplot2::element_blank(),
         axis.title.x = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_blank(),
         axis.ticks.x = ggplot2::element_blank(),
         plot.margin = ggplot2::margin(b = 2, t = 2)
-    ) + ggplot2::labs(y = y_title, color = NULL)
+    ) + ggplot2::labs(y = y_title, color = panel$name)
 
     p
 }
@@ -366,6 +387,20 @@ add_hlines_to_plot <- function(p, panel, data, browser = NULL) {
     }
 
     p
+}
+
+#' Render a static ggplot panel
+#'
+#' Returns the user-supplied ggplot object as-is. The plot is static,
+#' does not depend on the genomic region, and does not get vline /
+#' highlight overlays.
+#'
+#' @param panel Panel configuration (must have `plot` field with a ggplot)
+#' @param region Viewing region (unused; accepted for signature consistency)
+#' @return The ggplot object stored in `panel$plot`
+#' @keywords internal
+render_ggplot_panel <- function(panel, region) {
+    panel$plot
 }
 
 #' Compute a genome-wide quantile for a track

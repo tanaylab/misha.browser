@@ -36,8 +36,16 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
         return(NULL)
     }
 
+    # Resolve raw view (state > panel > cfg > FALSE)
+    effective_raw <- isTRUE(
+        browser$state$raw_view %||%
+            panel$raw %||%
+            browser$cfg$plot$raw %||%
+            FALSE
+    )
+
     # Get extraction mode: "fixed" (default), "dynamic", or "dynamic_smooth"
-    extraction_mode <- browser$cfg$plot$extraction_mode %||% "fixed"
+    extraction_mode <- if (effective_raw) "fixed" else (browser$cfg$plot$extraction_mode %||% "fixed")
     base_iter <- panel$iterator %||% browser$cfg$plot$iterator %||% .DEFAULT_ITERATOR
     target_points <- browser$cfg$plot$target_points %||% .DEFAULT_TARGET_POINTS
 
@@ -141,7 +149,8 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
         region$chrom, region$start, region$end,
         iterator,
         extraction_mode,
-        smoothing_key
+        smoothing_key,
+        effective_raw
     )
 
     # Check cache
@@ -173,9 +182,8 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
     t2 <- Sys.time()
     transforms <- panel$transforms %||% list()
     smooth_window <- panel$smooth_window %||% browser$state$smooth_window
-    if (extraction_mode %in% c("dynamic", "dynamic_smooth")) {
-        # In dynamic/dynamic_smooth modes, skip smooth transforms
-        # (iterator or vtrack aggregation provides smoothing)
+    # Skip smoothing when raw view or dynamic modes are active
+    if (effective_raw || extraction_mode %in% c("dynamic", "dynamic_smooth")) {
         transforms <- Filter(function(t) t$type != "smooth", transforms)
     } else if (!is.null(smooth_window)) {
         # In fixed mode, apply smooth window from state
@@ -199,7 +207,8 @@ extract_panel_data <- function(browser, panel, region, use_cache = TRUE) {
             if (is.null(vt_transforms) || length(vt_transforms) == 0) next
 
             vt_transforms <- vt_transforms %||% list()
-            if (extraction_mode %in% c("dynamic", "dynamic_smooth")) {
+            # Skip smoothing when raw view or dynamic modes are active
+            if (effective_raw || extraction_mode %in% c("dynamic", "dynamic_smooth")) {
                 vt_transforms <- Filter(function(t) t$type != "smooth", vt_transforms)
             } else if (!is.null(browser$state$smooth_window)) {
                 vt_transforms <- update_smooth_window(vt_transforms, browser$state$smooth_window)

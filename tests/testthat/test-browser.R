@@ -312,3 +312,43 @@ test_that("browser_add_vtrack stores shift and dim parameters", {
     expect_equal(vt$sshift, -500)
     expect_equal(vt$eshift, 500)
 })
+
+test_that("browser_add_panel accepts show_name argument", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"), show_name = FALSE)
+    expect_false(br$cfg$panels[[1]]$show_name)
+})
+
+test_that("browser_add_panel accepts raw argument", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"), raw = TRUE)
+    expect_true(br$cfg$panels[[1]]$raw)
+})
+
+test_that("browser_add_panel leaves raw NULL by default", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"))
+    expect_null(br$cfg$panels[[1]]$raw)
+})
+
+test_that("browser_add_panel accepts type = 'ggplot' with a plot", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    br <- browser_create() |>
+        browser_add_panel(name = "meta", type = "ggplot", plot = p)
+    expect_equal(br$cfg$panels[[1]]$type, "ggplot")
+    expect_s3_class(br$cfg$panels[[1]]$plot, "ggplot")
+})
+
+test_that("browser_add_panel does not auto-create vtracks for ggplot panels", {
+    p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    br <- browser_create() |>
+        browser_add_panel(name = "meta", type = "ggplot", plot = p)
+    # No vtracks should have been created
+    expect_length(br$cfg$vtracks %||% list(), 0)
+})
+
+test_that("browser_add_panel data-panel default behavior preserved (type defaults to 'data')", {
+    br <- browser_create() |>
+        browser_add_panel(name = "sig", tracks = c("t1"))
+    expect_equal(br$cfg$panels[[1]]$type, "data")
+})

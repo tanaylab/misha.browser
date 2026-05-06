@@ -154,7 +154,7 @@ browser_ui <- function(browser) {
                     )
                 ),
 
-                # Smooth window
+                # Smooth window + raw toggle
                 shiny::column(
                     2,
                     shiny::numericInput(
@@ -162,6 +162,14 @@ browser_ui <- function(browser) {
                         "Smooth",
                         value = cfg$ui$smooth_window_default %||% 10,
                         min = 1, step = 5, width = "100%"
+                    ),
+                    shiny::tags$div(
+                        title = "No smoothing; NAs render as gaps",
+                        shiny::checkboxInput(
+                            inputId = "raw_view",
+                            label = "Raw view",
+                            value = isTRUE(cfg$plot$raw)
+                        )
                     )
                 )
             ),
