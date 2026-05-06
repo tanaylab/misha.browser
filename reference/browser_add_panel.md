@@ -16,6 +16,10 @@ browser_add_panel(
   colors = NULL,
   ylim = NULL,
   height = 2,
+  show_name = FALSE,
+  raw = NULL,
+  type = "data",
+  plot = NULL,
   ...
 )
 ```
@@ -61,6 +65,27 @@ browser_add_panel(
 - height:
 
   Relative height
+
+- show_name:
+
+  Logical, render the panel name as a bold left-side strip label
+  (default FALSE)
+
+- raw:
+
+  Logical or NULL. If TRUE, render without smoothing and with NAs as
+  gaps. NULL inherits from cfg\$plot\$raw.
+
+- type:
+
+  Panel type. One of "data" (default), "annotation", "intervals",
+  "ideogram", or "ggplot".
+
+- plot:
+
+  A ggplot object. Only used when `type = "ggplot"`. The plot is
+  rendered as-is (static, region-independent, no vline/highlight
+  overlays). Cannot be saved to YAML.
 
 - ...:
 

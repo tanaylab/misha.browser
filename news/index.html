@@ -36,6 +36,17 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.2" id="mishabrowser-012">misha.browser 0.1.2<a class="anchor" aria-label="anchor" href="#mishabrowser-012"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-1-2">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-1-2"></a></h3>
+<ul><li><p>The panel <code>name</code> now appears as the legend title for data panels (e.g. a panel named <code>"signal"</code> shows “signal” above the track-name list in the legend).</p></li>
+<li><p><code><a href="../reference/browser_add_panel.html">browser_add_panel()</a></code> gains <code>show_name</code> (default <code>FALSE</code>), which renders the panel name as a bold left-side strip label (UCSC-style). Off by default to avoid visual noise; opt in with <code>show_name = TRUE</code>.</p></li>
+<li><p><code><a href="../reference/browser_add_panel.html">browser_add_panel()</a></code> accepts <code>type = "ggplot"</code> and a <code>plot</code> argument to render an arbitrary user-supplied static ggplot object as a panel. Useful for sample-metadata heatmaps, logos, and other annotations that don’t depend on the genomic region. The plot is static (does not re-render on navigation), gets no vline/highlight overlay, and cannot be saved to YAML — <code><a href="../reference/browser_save_config.html">browser_save_config()</a></code> drops ggplot panels with a warning listing the dropped names.</p></li>
+<li><p><code><a href="../reference/browser_add_panel.html">browser_add_panel()</a></code> gains <code>raw</code> (default <code>NULL</code>, inheriting from <code>cfg$plot$raw</code>), which renders the panel without smoothing and surfaces NAs as gaps. Useful for sparse data tracks where smoothing is misleading. Precedence at render time: Shiny <code>Raw view</code> checkbox &gt; per-panel <code>raw</code> &gt; global <code>cfg$plot$raw</code> &gt; <code>FALSE</code>.</p></li>
+<li><p>Shiny UI gains a “Raw view” checkbox next to the smooth slider. When active, smoothing is skipped session-wide and the smooth slider is visually disabled.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="mishabrowser-011">misha.browser 0.1.1<a class="anchor" aria-label="anchor" href="#mishabrowser-011"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-1-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-1-1"></a></h3>

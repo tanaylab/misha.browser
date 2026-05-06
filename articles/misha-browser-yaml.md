@@ -249,6 +249,7 @@ Supported patterns:
 For example, this is correct:
 
 ``` r
+
 browser <- browser_create(misha_root = .misha$GROOT) %>%
   browser_add_vtrack(
     "chipseq_q",
@@ -477,6 +478,7 @@ directory is not a valid misha database.
 **Solution**: Verify your misha root:
 
 ``` r
+
 misha::gsetroot("/your/misha/root")
 misha::gtrack.ls()  # Should list available tracks
 ```

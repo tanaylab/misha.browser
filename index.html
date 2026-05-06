@@ -376,60 +376,60 @@
 <col width="26%">
 <col width="73%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Parameter</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>intervals</code></td>
 <td>Misha intervals name (e.g., <code>intervs.global.rmsk</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>source</code></td>
 <td>Alternative: <code>file</code> to load from a file</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>file</code></td>
 <td>Path to BED/TSV file (when <code>source: file</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>color_by</code></td>
 <td>Column to map to fill color</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>colors</code></td>
 <td>Named color mapping</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>outline_color</code></td>
 <td>Border color for rectangles</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>filter_field</code></td>
 <td>Column to filter on</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>filter_values</code></td>
 <td>Values to include (list)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>filter_regex</code></td>
 <td>Regex pattern to match</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>label_field</code></td>
 <td>Column for text labels</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>show_labels</code></td>
 <td>Whether to display labels</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>show_direction</code></td>
 <td>Draw intervals as arrows by strand (e.g. CTCF motifs)</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>direction_field</code></td>
 <td>Column name for strand (default: <code>strand</code>)</td>
 </tr>
@@ -475,37 +475,37 @@
 <span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="at">        </span><span class="fu">color</span><span class="kw">:</span><span class="at"> red</span></span>
 <span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="at">        </span><span class="fu">label</span><span class="kw">:</span><span class="at"> </span><span class="st">"95th percentile"</span></span></code></pre></div>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Parameter</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>y</code></td>
 <td>Fixed y-position for the line</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>stat</code></td>
 <td>Compute from data: <code>mean</code>, <code>median</code>, or <code>quantile</code>
 </td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>q</code></td>
 <td>Quantile value (when <code>stat: quantile</code>)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>color</code></td>
 <td>Line color</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>linetype</code></td>
 <td>Line type: <code>solid</code>, <code>dashed</code>, <code>dotted</code>, etc.</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>linewidth</code></td>
 <td>Line width</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>label</code></td>
 <td>Optional text label (placed at right edge)</td>
 </tr>
@@ -517,57 +517,57 @@
 </h3>
 <p>Available transform types:</p>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Transform</th>
 <th>Parameters</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>smooth</code></td>
 <td>
 <code>window</code>, <code>align</code>
 </td>
 <td>Rolling mean smoothing</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>log2</code></td>
 <td><code>offset</code></td>
 <td>Log2 transformation with offset</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>log10</code></td>
 <td><code>offset</code></td>
 <td>Log10 transformation with offset</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>sqrt</code></td>
 <td>-</td>
 <td>Square root transformation</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>zscore</code></td>
 <td>-</td>
 <td>Z-score normalization</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>minmax</code></td>
 <td>-</td>
 <td>Min-max scaling to 0..1</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>clip</code></td>
 <td>
 <code>min</code>, <code>max</code>
 </td>
 <td>Clip values to range</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>quantile</code></td>
 <td><code>probs</code></td>
 <td>Quantile normalization</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>expr</code></td>
 <td><code>expr</code></td>
 <td>Custom R expression</td>
@@ -634,20 +634,20 @@
 <col width="50%">
 <col width="50%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Mode</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>fixed</code></td>
 <td>Fixed iterator + rollmean smoothing. Best for vtracks with <code>func=sum</code>.</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>dynamic</code></td>
 <td>Adjusts iterator based on view span. More efficient for large regions.</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>dynamic_smooth</code></td>
 <td>Dynamic iterator + dynamic vtrack sshift/eshift. Combines resolution with proper value scaling.</td>
 </tr>

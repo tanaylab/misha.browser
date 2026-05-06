@@ -31,6 +31,7 @@ application for interactive exploration.
 ## Installation
 
 ``` r
+
 # Install from GitHub
 remotes::install_github("tanaylab/misha.browser")
 ```
@@ -38,6 +39,7 @@ remotes::install_github("tanaylab/misha.browser")
 ## TL;DR Workflow
 
 ``` r
+
 library(misha.browser)
 
 # 1) Create a browser rooted at the mm10 misha database
@@ -79,6 +81,7 @@ browser_plot(browser, region = gintervals(1, 1e6, 2e6))
 ### From YAML Configuration
 
 ``` r
+
 library(misha.browser)
 
 # Create browser from config file
@@ -97,6 +100,7 @@ browser_run(browser)
 ### Programmatic Setup
 
 ``` r
+
 library(misha.browser)
 
 # Create browser programmatically
@@ -239,6 +243,7 @@ The behavior is inferred:
 For example, this is correct:
 
 ``` r
+
 browser <- browser_create(misha_root = .misha$GROOT) %>%
   browser_add_vtrack(
     "chipseq_q",
@@ -481,10 +486,10 @@ plot:
   smoothing_bp: 3200      # Smoothing window for dynamic_smooth mode
 ```
 
-| Mode             | Description                                                                                     |
-|------------------|-------------------------------------------------------------------------------------------------|
-| `fixed`          | Fixed iterator + rollmean smoothing. Best for vtracks with `func=sum`.                          |
-| `dynamic`        | Adjusts iterator based on view span. More efficient for large regions.                          |
+| Mode | Description |
+|----|----|
+| `fixed` | Fixed iterator + rollmean smoothing. Best for vtracks with `func=sum`. |
+| `dynamic` | Adjusts iterator based on view span. More efficient for large regions. |
 | `dynamic_smooth` | Dynamic iterator + dynamic vtrack sshift/eshift. Combines resolution with proper value scaling. |
 
 ## API Reference
@@ -492,6 +497,7 @@ plot:
 ### Browser Creation
 
 ``` r
+
 browser_create(config = NULL, misha_root = NULL, title = "Genome Browser", profile = NULL)
 browser_load(file)
 browser_save(browser, file)
@@ -505,6 +511,7 @@ browser_deploy_local(dest_dir,
 ### Panel Management
 
 ``` r
+
 browser_add_panel(browser, name, type = "data", tracks = NULL, ...)
 browser_add_transform(browser, panel_name, type, ...)
 browser_set_tracks(browser, panel_name, tracks)
@@ -514,6 +521,7 @@ browser_set_ylim(browser, panel_name, ylim)
 ### Navigation
 
 ``` r
+
 browser_set_region(browser, region)
 browser_get_region(browser)
 browser_zoom_in(browser, factor = 2)
@@ -525,6 +533,7 @@ browser_move_right(browser, fraction = 0.5)
 ### Visualization
 
 ``` r
+
 browser_plot(browser, region = NULL, gene = NULL, span = NULL)
 browser_set_highlight(browser, start, end)
 browser_clear_highlight(browser)
@@ -533,12 +542,14 @@ browser_clear_highlight(browser)
 ### Vertical Lines
 
 ``` r
+
 browser_add_vlines(browser, name, source, file = NULL, intervals = NULL, ...)
 ```
 
 ### Interactive App
 
 ``` r
+
 browser_run(browser, port = 8911, host = "0.0.0.0", launch.browser = TRUE)
 browser_launch(config, port = 8911, host = "0.0.0.0", profile = NULL)
 ```
@@ -546,6 +557,7 @@ browser_launch(config, port = 8911, host = "0.0.0.0", profile = NULL)
 ### Local Deployment Helper
 
 ``` r
+
 browser_deploy_local(
   dest_dir = "/srv/shiny-server/misha-browser",
   config = "inst/examples/silicus.yaml",
@@ -559,6 +571,7 @@ browser_deploy_local(
 ### Configuration
 
 ``` r
+
 browser_load_config(file, profile = NULL)
 browser_save_config(cfg, file)
 browser_create_config(misha_root = NULL, title = "Genome Browser")
@@ -568,6 +581,7 @@ browser_clear_cache()
 ### Migration
 
 ``` r
+
 # Convert misha.vis configuration to misha.browser format
 browser_convert_vis_config(vis_config_file, output_file, misha_root = NULL)
 ```
