@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`browser_add_intervals_panel()`](https://tanaylab.github.io/misha.browser/reference/browser_add_intervals_panel.md)
+  : Add an intervals panel to the browser
 - [`browser_add_panel()`](https://tanaylab.github.io/misha.browser/reference/browser_add_panel.md)
   : Add a data panel to the browser
 - [`browser_add_transform()`](https://tanaylab.github.io/misha.browser/reference/browser_add_transform.md)

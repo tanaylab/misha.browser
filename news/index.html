@@ -50,7 +50,8 @@
 <h2 class="pkg-version" data-toc-text="0.1.1" id="mishabrowser-011">misha.browser 0.1.1<a class="anchor" aria-label="anchor" href="#mishabrowser-011"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-1-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-1-1"></a></h3>
-<ul><li><p>Intervals panels: <code>show_direction</code> option to plot intervals as arrows (triangles) by strand, for directional features like CTCF motifs. Uses <code>strand</code> column (BED col 6 or misha intervals). <code>direction_field</code> to specify custom column name.</p></li>
+<ul><li><p><code><a href="../reference/browser_add_intervals_panel.html">browser_add_intervals_panel()</a></code>: programmatic API for adding intervals panels. Accepts a misha intervals name, a file path, or an in-memory data frame (<code>intervals = my_df</code>). Data-frame panels are runtime-only and are skipped by <code><a href="../reference/browser_save_config.html">browser_save_config()</a></code>.</p></li>
+<li><p>Intervals panels: <code>show_direction</code> option to plot intervals as arrows (triangles) by strand, for directional features like CTCF motifs. Uses <code>strand</code> column (BED col 6 or misha intervals). <code>direction_field</code> to specify custom column name.</p></li>
 <li><p>Simplified <code><a href="../reference/browser_add_vtrack.html">browser_add_vtrack()</a></code> and YAML vtrack configuration to use a single inferred <code>expression</code> field. When <code>src</code>/<code>func</code> are present, <code>expression</code> wraps the created vtrack during extraction; otherwise it defines a pure expression vtrack. Legacy <code>expr</code> is still accepted as a compatibility alias.</p></li>
 </ul></div>
 </div>
