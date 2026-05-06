@@ -83,3 +83,88 @@ test_that("get_panel_colors handles empty data gracefully", {
 
     expect_length(result, 0)
 })
+
+# =============================================================================
+# Tests for panel-name strip (Feature 1)
+# =============================================================================
+
+# Helper: minimal pre-extracted data so render_data_panel skips extraction
+.panel_strip_data <- function() {
+    data.frame(
+        chrom = "chr1",
+        start = seq(1, 1000, by = 100),
+        end   = seq(100, 1099, by = 100),
+        pos   = seq(50, 1049, by = 100),
+        value = runif(10),
+        track = rep("t1", 10),
+        source = rep("src", 10),
+        stringsAsFactors = FALSE
+    )
+}
+
+test_that("data panel injects ._panel_name and uses FacetGrid when show_name = TRUE", {
+    panel <- list(
+        name = "my_signal",
+        type = "data",
+        tracks = "t1",
+        plot_type = "line",
+        show_name = TRUE
+    )
+    panel$._cfg_colors <- list()
+    region <- data.frame(chrom = "chr1", start = 1, end = 1100)
+
+    p <- render_data_panel(
+        browser = list(cfg = list(colors = list())),
+        panel = panel,
+        region = region,
+        vlines_data = NULL,
+        pre_extracted_data = .panel_strip_data()
+    )
+
+    expect_true("._panel_name" %in% names(p$data))
+    expect_equal(unique(p$data$._panel_name), "my_signal")
+    expect_s3_class(p$facet, "FacetGrid")
+})
+
+test_that("data panel does NOT add ._panel_name when show_name = FALSE", {
+    panel <- list(
+        name = "my_signal",
+        type = "data",
+        tracks = "t1",
+        plot_type = "line",
+        show_name = FALSE
+    )
+    panel$._cfg_colors <- list()
+    region <- data.frame(chrom = "chr1", start = 1, end = 1100)
+
+    p <- render_data_panel(
+        browser = list(cfg = list(colors = list())),
+        panel = panel,
+        region = region,
+        vlines_data = NULL,
+        pre_extracted_data = .panel_strip_data()
+    )
+
+    expect_false("._panel_name" %in% names(p$data))
+    expect_s3_class(p$facet, "FacetNull")
+})
+
+test_that("apply_panel_theme sets legend title to panel name", {
+    panel <- list(name = "my_signal", show_legend = TRUE)
+    p <- ggplot2::ggplot()
+    p <- apply_panel_theme(p, panel)
+    # ggplot stores labs in p$labels; the color label should be panel$name
+    expect_equal(p$labels$colour %||% p$labels$color, "my_signal")
+})
+
+# =============================================================================
+# Tests for ggplot panel rendering (Feature 2)
+# =============================================================================
+
+test_that("render_ggplot_panel returns the panel's plot as-is", {
+    p_in <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt)) + ggplot2::geom_point()
+    panel <- list(name = "meta", type = "ggplot", plot = p_in)
+    region <- data.frame(chrom = "chr1", start = 1, end = 100)
+    p_out <- render_ggplot_panel(panel, region)
+    expect_identical(p_out, p_in)
+})

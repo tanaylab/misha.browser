@@ -3,3 +3,4 @@ docs
 .a5c/
 CLAUDE.md
 tests/testthat/screenshots/
+.worktrees/

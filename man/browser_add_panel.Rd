@@ -15,6 +15,10 @@ browser_add_panel(
   colors = NULL,
   ylim = NULL,
   height = 2,
+  show_name = FALSE,
+  raw = NULL,
+  type = "data",
+  plot = NULL,
   ...
 )
 }
@@ -38,6 +42,14 @@ browser_add_panel(
 \item{ylim}{Y-axis limits}
 
 \item{height}{Relative height}
+
+\item{show_name}{Logical, render the panel name as a bold left-side strip label (default FALSE)}
+
+\item{raw}{Logical or NULL. If TRUE, render without smoothing and with NAs as gaps. NULL inherits from cfg$plot$raw.}
+
+\item{type}{Panel type. One of "data" (default), "annotation", "intervals", "ideogram", or "ggplot".}
+
+\item{plot}{A ggplot object. Only used when \code{type = "ggplot"}. The plot is rendered as-is (static, region-independent, no vline/highlight overlays). Cannot be saved to YAML.}
 
 \item{...}{Additional panel options (e.g. \code{iterator} for per-panel iterator override)}
 }

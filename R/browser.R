@@ -402,7 +402,9 @@ browser_save <- function(browser, file) {
 #'
 #' @param browser Browser object
 #' @param name Panel name
+#' @param type Panel type. One of "data" (default), "annotation", "intervals", "ideogram", or "ggplot".
 #' @param tracks Character vector of track names
+#' @param plot A ggplot object. Only used when `type = "ggplot"`. The plot is rendered as-is (static, region-independent, no vline/highlight overlays). Cannot be saved to YAML.
 #' @param grouping List with color_by, pattern, overrides
 #' @param facet_by Variable to facet by (from grouping pattern)
 #' @param transforms List of transforms to apply
@@ -410,6 +412,8 @@ browser_save <- function(browser, file) {
 #' @param colors Named vector of colors
 #' @param ylim Y-axis limits
 #' @param height Relative height
+#' @param show_name Logical, render the panel name as a bold left-side strip label (default FALSE)
+#' @param raw Logical or NULL. If TRUE, render without smoothing and with NAs as gaps. NULL inherits from cfg$plot$raw.
 #' @param ... Additional panel options (e.g. `iterator` for per-panel iterator override)
 #' @return Updated browser object
 #' @export
@@ -421,8 +425,29 @@ browser_add_panel <- function(browser, name, tracks = NULL,
                               colors = NULL,
                               ylim = NULL,
                               height = 2,
+                              show_name = FALSE,
+                              raw = NULL,
+                              type = "data",
+                              plot = NULL,
                               ...) {
-    # Auto-create vtracks for each track
+    if (type == "ggplot") {
+        panel <- list(
+            name = name,
+            type = "ggplot",
+            plot = plot,
+            height = height,
+            show_name = show_name
+        )
+        extra <- list(...)
+        for (opt in names(extra)) {
+            panel[[opt]] <- extra[[opt]]
+        }
+        panel <- validate_panel(panel, length(browser$cfg$panels) + 1)
+        browser$cfg$panels <- c(browser$cfg$panels, list(panel))
+        return(browser)
+    }
+
+    # Auto-create vtracks for each track (data panels only)
     if (!is.null(tracks) && length(tracks) > 0) {
         existing_vtrack_names <- vapply(
             browser$cfg$vtracks %||% list(),
@@ -430,11 +455,9 @@ browser_add_panel <- function(browser, name, tracks = NULL,
             character(1)
         )
         for (track in tracks) {
-            # Auto-vtrack creation applies only to plain track-name strings
             if (!is.character(track) || length(track) != 1 || is.na(track) || !nzchar(track)) {
                 next
             }
-            # Skip if vtrack already exists with this name
             if (track %in% existing_vtrack_names) {
                 next
             }
@@ -450,7 +473,7 @@ browser_add_panel <- function(browser, name, tracks = NULL,
 
     panel <- list(
         name = name,
-        type = "data",
+        type = type,
         tracks = tracks,
         grouping = grouping,
         facet_by = facet_by,
@@ -458,10 +481,11 @@ browser_add_panel <- function(browser, name, tracks = NULL,
         plot_type = plot_type,
         colors = colors,
         ylim = ylim,
-        height = height
+        height = height,
+        show_name = show_name,
+        raw = raw
     )
 
-    # Add extra options
     extra <- list(...)
     for (opt in names(extra)) {
         panel[[opt]] <- extra[[opt]]
