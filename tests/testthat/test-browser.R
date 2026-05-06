@@ -39,6 +39,64 @@ test_that("browser_add_panel supports method chaining", {
     expect_length(browser$cfg$panels, 3)
 })
 
+test_that("browser_add_intervals_panel accepts a data frame", {
+    df <- data.frame(
+        chrom = "chr1",
+        start = c(100, 300),
+        end = c(200, 400)
+    )
+    browser <- browser_create() %>%
+        browser_add_intervals_panel("peaks", intervals = df)
+
+    expect_length(browser$cfg$panels, 1)
+    panel <- browser$cfg$panels[[1]]
+    expect_equal(panel$type, "intervals")
+    expect_equal(panel$source, "df")
+    expect_true(is.data.frame(panel$._df))
+    expect_equal(nrow(panel$._df), 2)
+})
+
+test_that("browser_add_intervals_panel routes to file/intervals/df sources", {
+    # df source
+    df <- data.frame(chrom = "chr1", start = 1, end = 2)
+    b1 <- browser_add_intervals_panel(browser_create(), "p", intervals = df)
+    expect_equal(b1$cfg$panels[[1]]$source, "df")
+
+    # intervals (string) source
+    b2 <- browser_add_intervals_panel(browser_create(), "p", intervals = "intervs.global.tss")
+    expect_equal(b2$cfg$panels[[1]]$source, "intervals")
+    expect_equal(b2$cfg$panels[[1]]$intervals, "intervs.global.tss")
+
+    # file source
+    tmp <- tempfile(fileext = ".tsv")
+    writeLines("chrom\tstart\tend\nchr1\t1\t2", tmp)
+    b3 <- browser_add_intervals_panel(browser_create(), "p", file = tmp)
+    expect_equal(b3$cfg$panels[[1]]$source, "file")
+    expect_equal(b3$cfg$panels[[1]]$file, tmp)
+    unlink(tmp)
+})
+
+test_that("browser_add_intervals_panel errors when no source given", {
+    expect_error(
+        browser_add_intervals_panel(browser_create(), "p"),
+        "intervals|file"
+    )
+})
+
+test_that("browser_add_panel(type='intervals', intervals=df) works as a shortcut", {
+    df <- data.frame(chrom = "chr1", start = 100, end = 200)
+    browser <- browser_create() %>%
+        browser_add_panel(
+            name = "mm_peaks", type = "intervals",
+            intervals = df, color = "black", height = 0.5
+        )
+    panel <- browser$cfg$panels[[1]]
+    expect_equal(panel$type, "intervals")
+    expect_equal(panel$source, "df")
+    expect_true(is.data.frame(panel$._df))
+    expect_null(panel$intervals)
+})
+
 test_that("browser_add_panel does not create duplicate auto-vtracks for repeated tracks", {
     browser <- browser_create() %>%
         browser_add_panel(name = "signal", tracks = c("dup_track", "dup_track"))

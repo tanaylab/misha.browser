@@ -356,6 +356,28 @@ panels:
 | `show_direction` | Draw intervals as arrows (triangles) by strand; requires `strand` column (BED col 6 or misha) |
 | `direction_field` | Column name for strand (default: `strand`) |
 
+You can also build an intervals panel programmatically from an in-memory data
+frame, which is convenient for ad-hoc browsing of computed intervals:
+
+```r
+peaks <- data.frame(
+    chrom = "chr1",
+    start = c(1e6, 1.2e6),
+    end   = c(1.05e6, 1.25e6),
+    name  = c("peak_a", "peak_b")
+)
+
+browser <- browser_create() %>%
+    browser_add_intervals_panel(
+        "peaks",
+        intervals = peaks,
+        label_field = "name",
+        show_labels = TRUE
+    )
+```
+
+Data-frame intervals are runtime-only and are skipped by `browser_save_config()`.
+
 #### Ideogram Panels
 
 ```yaml

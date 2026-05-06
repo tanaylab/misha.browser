@@ -154,7 +154,13 @@ extract_intervals_data <- function(panel, region) {
         return(NULL)
     }
 
-    if (panel$source == "file") {
+    if (panel$source == "df") {
+        # In-memory data frame supplied at panel creation
+        intervals <- panel$._df %||% panel$df
+        if (!is.data.frame(intervals)) {
+            return(NULL)
+        }
+    } else if (panel$source == "file") {
         # Use resolved path if available (relative paths resolved against data_dir)
         file_path <- panel$._resolved_file %||% panel$file
         if (is.null(file_path) || !file.exists(file_path)) {

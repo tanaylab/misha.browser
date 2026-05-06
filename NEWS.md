@@ -32,6 +32,11 @@
 
 ## New Features
 
+* `browser_add_intervals_panel()`: programmatic API for adding intervals
+  panels. Accepts a misha intervals name, a file path, or an in-memory
+  data frame (`intervals = my_df`). Data-frame panels are runtime-only and
+  are skipped by `browser_save_config()`.
+
 * Intervals panels: `show_direction` option to plot intervals as arrows
   (triangles) by strand, for directional features like CTCF motifs. Uses
   `strand` column (BED col 6 or misha intervals). `direction_field` to

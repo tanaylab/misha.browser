@@ -446,6 +446,123 @@ test_that("extract_intervals_data loads and normalizes strand", {
     unlink(temp_file)
 })
 
+# =============================================================================
+# Tests for data-frame source
+# =============================================================================
+
+test_that("extract_intervals_data uses data frame when source = 'df'", {
+    df <- data.frame(
+        chrom = c("chr1", "chr1", "chr2"),
+        start = c(100, 200, 100),
+        end = c(150, 250, 150),
+        type = c("A", "B", "A"),
+        stringsAsFactors = FALSE
+    )
+
+    panel <- list(source = "df", ._df = df)
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    result <- extract_intervals_data(panel, region)
+
+    expect_equal(nrow(result), 2) # only chr1 rows
+    expect_true(all(result$chrom == "chr1"))
+})
+
+test_that("extract_intervals_data returns NULL when df source missing data frame", {
+    panel <- list(source = "df")
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    expect_null(extract_intervals_data(panel, region))
+})
+
+test_that("extract_intervals_data with df applies filter_field", {
+    df <- data.frame(
+        chrom = "chr1",
+        start = c(100, 200, 300),
+        end = c(150, 250, 350),
+        type = c("A", "B", "A")
+    )
+    panel <- list(
+        source = "df", ._df = df,
+        filter_field = "type", filter_values = "A"
+    )
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    result <- extract_intervals_data(panel, region)
+
+    expect_equal(nrow(result), 2)
+    expect_true(all(result$type == "A"))
+})
+
+test_that("render_intervals_panel works with df source", {
+    df <- data.frame(
+        chrom = "chr1",
+        start = c(100, 200),
+        end = c(150, 250),
+        strand = c("+", "-")
+    )
+    panel <- list(
+        source = "df", ._df = df,
+        show_direction = TRUE,
+        color = "navy"
+    )
+    region <- data.frame(chrom = "chr1", start = 50, end = 500)
+    result <- render_intervals_panel(panel, region)
+
+    expect_s3_class(result, "ggplot")
+    has_segment <- any(sapply(result$layers, function(l) inherits(l$geom, "GeomSegment")))
+    expect_true(has_segment)
+})
+
+test_that("validate_panel auto-detects df source from data frame argument", {
+    df <- data.frame(chrom = "chr1", start = 100, end = 200)
+    panel <- list(name = "p", type = "intervals", df = df)
+    out <- validate_panel(panel, 1)
+    expect_equal(out$source, "df")
+    expect_true(is.data.frame(out$._df))
+    expect_null(out$df)
+})
+
+test_that("validate_panel auto-detects df from intervals argument", {
+    df <- data.frame(chrom = "chr1", start = 100, end = 200)
+    panel <- list(name = "p", type = "intervals", intervals = df)
+    out <- validate_panel(panel, 1)
+    expect_equal(out$source, "df")
+    expect_true(is.data.frame(out$._df))
+    expect_null(out$intervals)
+})
+
+test_that("validate_panel_full reports missing df for source = 'df'", {
+    panel <- list(name = "p", type = "intervals", source = "df")
+    errs <- validate_panel_full(panel, 1, character(0))
+    expect_true(any(grepl("data frame is required", unlist(errs))))
+})
+
+test_that("validate_panel_full requires chrom/start/end columns for df", {
+    df <- data.frame(a = 1, b = 2)
+    panel <- list(name = "p", type = "intervals", source = "df", ._df = df)
+    errs <- validate_panel_full(panel, 1, character(0))
+    expect_true(any(grepl("chrom, start, end", unlist(errs))))
+})
+
+test_that("validate_panel_full passes for valid df source", {
+    df <- data.frame(chrom = "chr1", start = 100, end = 200)
+    panel <- list(name = "p", type = "intervals", source = "df", ._df = df)
+    errs <- validate_panel_full(panel, 1, character(0))
+    df_errs <- errs[grep("^panel_1_(df|file|intervals)$", names(errs))]
+    expect_length(df_errs, 0)
+})
+
+test_that("clean_config_for_export drops df-source intervals panels", {
+    df <- data.frame(chrom = "chr1", start = 100, end = 200)
+    cfg <- list(panels = list(
+        list(name = "regular", type = "intervals", source = "intervals", intervals = "x"),
+        list(name = "inmem", type = "intervals", source = "df", ._df = df)
+    ))
+    suppressWarnings(
+        out <- clean_config_for_export(cfg)
+    )
+    panel_names <- vapply(out$panels, function(p) p$name, character(1))
+    expect_equal(panel_names, "regular")
+})
+
 test_that("render_intervals_panel draws arrows when show_direction and strand present", {
     temp_file <- tempfile(fileext = ".tsv")
     write.table(

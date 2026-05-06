@@ -497,6 +497,111 @@ browser_add_panel <- function(browser, name, tracks = NULL,
     browser
 }
 
+#' Add an intervals panel to the browser
+#'
+#' Adds a panel that displays genomic intervals as rectangles (or arrows when
+#' `show_direction = TRUE`). The intervals can come from a misha intervals set,
+#' a file (BED/TSV), or an in-memory data frame.
+#'
+#' @param browser Browser object
+#' @param name Panel name
+#' @param intervals Intervals source. Either a character string naming a misha
+#'   intervals set, or a data frame with `chrom`, `start`, `end` columns. When a
+#'   data frame is supplied, the panel is runtime-only and is not serialized to
+#'   YAML by [browser_save_config()].
+#' @param file Path to a BED/TSV file (used when `intervals` is not given).
+#' @param color Default fill color for intervals.
+#' @param outline_color Border color for rectangles.
+#' @param color_by Column to map to fill color.
+#' @param colors Named vector/list of colors keyed by `color_by` values.
+#' @param label_field Column to use for text labels.
+#' @param show_labels Whether to draw labels.
+#' @param show_direction Draw intervals as arrows by strand.
+#' @param direction_field Column name holding strand (default `"strand"`).
+#' @param filter_field Column to filter on.
+#' @param filter_values Values to keep (vector).
+#' @param filter_regex Regex pattern to match.
+#' @param height Relative panel height.
+#' @param y_title Optional y-axis title.
+#' @param ... Additional panel options.
+#' @return Updated browser object
+#' @export
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'     chrom = "chr1",
+#'     start = c(1e6, 1.2e6),
+#'     end = c(1.05e6, 1.25e6),
+#'     name = c("peak_a", "peak_b")
+#' )
+#' browser <- browser_create() %>%
+#'     browser_add_intervals_panel(
+#'         "peaks",
+#'         intervals = df,
+#'         label_field = "name",
+#'         show_labels = TRUE
+#'     )
+#' }
+browser_add_intervals_panel <- function(browser, name,
+                                        intervals = NULL,
+                                        file = NULL,
+                                        color = "grey60",
+                                        outline_color = "grey20",
+                                        color_by = NULL,
+                                        colors = NULL,
+                                        label_field = NULL,
+                                        show_labels = FALSE,
+                                        show_direction = FALSE,
+                                        direction_field = "strand",
+                                        filter_field = NULL,
+                                        filter_values = NULL,
+                                        filter_regex = NULL,
+                                        height = NULL,
+                                        y_title = NULL,
+                                        ...) {
+    panel <- list(
+        name = name,
+        type = "intervals",
+        color = color,
+        outline_color = outline_color,
+        show_labels = show_labels,
+        show_direction = show_direction,
+        direction_field = direction_field
+    )
+
+    if (is.data.frame(intervals)) {
+        panel$source <- "df"
+        panel$._df <- intervals
+    } else if (!is.null(intervals) && nzchar(intervals)) {
+        panel$source <- "intervals"
+        panel$intervals <- intervals
+    } else if (!is.null(file) && nzchar(file)) {
+        panel$source <- "file"
+        panel$file <- file
+    } else {
+        cli::cli_abort("Provide one of {.arg intervals} (name or data frame) or {.arg file}")
+    }
+
+    if (!is.null(color_by)) panel$color_by <- color_by
+    if (!is.null(colors)) panel$colors <- colors
+    if (!is.null(label_field)) panel$label_field <- label_field
+    if (!is.null(filter_field)) panel$filter_field <- filter_field
+    if (!is.null(filter_values)) panel$filter_values <- filter_values
+    if (!is.null(filter_regex)) panel$filter_regex <- filter_regex
+    if (!is.null(height)) panel$height <- height
+    if (!is.null(y_title)) panel$y_title <- y_title
+
+    extra <- list(...)
+    for (opt in names(extra)) {
+        panel[[opt]] <- extra[[opt]]
+    }
+
+    panel <- validate_panel(panel, length(browser$cfg$panels) + 1)
+    browser$cfg$panels <- c(browser$cfg$panels, list(panel))
+
+    browser
+}
+
 #' Add a virtual track to the browser
 #'
 #' Adds a virtual track definition to the browser configuration. Expression
