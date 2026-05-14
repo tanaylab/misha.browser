@@ -284,7 +284,8 @@ apply_panel_scales <- function(p, panel, x_limits) {
 apply_panel_theme <- function(p, panel) {
     p <- p + ggplot2::theme_bw()
 
-    legend_pos <- if (panel$show_legend %||% TRUE) "bottom" else "none"
+    show_legend <- panel$show_legend %||% TRUE
+    legend_pos <- if (show_legend) "bottom" else "none"
     y_title <- panel$y_title %||% ""
 
     p <- p + ggplot2::theme(
@@ -300,6 +301,12 @@ apply_panel_theme <- function(p, panel) {
         axis.ticks.x = ggplot2::element_blank(),
         plot.margin = ggplot2::margin(b = 2, t = 2)
     ) + ggplot2::labs(y = y_title, color = panel$name)
+
+    # show_legend = FALSE must also suppress the guide itself, so patchwork's
+    # `guides = "collect"` doesn't pick it up at the patchwork level.
+    if (!show_legend) {
+        p <- p + ggplot2::guides(color = "none", fill = "none")
+    }
 
     p
 }
