@@ -346,7 +346,7 @@ extract_tracks <- function(tracks, region, iterator = .DEFAULT_ITERATOR, colname
     for (i in seq_along(tracks)) {
         track <- tracks[i]
         # Skip if it looks like an expression (contains operators or parentheses)
-        if (grepl("[+*/()[:space:]-]", track)) {
+        if (grepl("[+*/()[:space:]^-]", track)) {
             next
         }
         # Check if track exists as a regular track or vtrack
