@@ -121,7 +121,7 @@ add_data_layer <- function(p, panel, color_by) {
     alpha <- panel$alpha %||% 0.8
     linewidth <- panel$linewidth %||% 0.7
 
-    color_aes <- if (color_by %in% c("track", "source", "mark")) {
+    color_aes <- if (!is.null(color_by) && nzchar(color_by)) {
         ggplot2::aes(color = .data[[color_by]])
     } else {
         ggplot2::aes()
