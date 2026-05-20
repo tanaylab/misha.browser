@@ -152,13 +152,20 @@ add_data_layer <- function(p, panel, color_by) {
         "line_points" = {
             # Line through the data with constant-size dots overlaid. Good
             # for sparse / per-CpG signals (e.g. WGBS meth fraction): the
-            # line shows trend, the dots mark actual measurements. NAs
-            # break the line (na.rm = TRUE).
+            # line shows trend, the dots mark actual measurements.
+            #
+            # `geom_line(na.rm = TRUE)` silently drops NAs but still breaks
+            # the line at each NA position - so with a per-bp iterator where
+            # most positions are non-measured (NA), the line is invisible.
+            # Pre-filter the line's data with a function (NSE form so the
+            # value column name is taken from the layer's aes) so the line
+            # connects consecutive *measured* points across NA gaps.
             p + ggplot2::geom_line(
-                color_aes,
-                linewidth = linewidth, alpha = alpha, na.rm = TRUE
+                data = function(d) d[!is.na(d$value), , drop = FALSE],
+                mapping = color_aes,
+                linewidth = linewidth, alpha = alpha
             ) + ggplot2::geom_point(
-                color_aes,
+                mapping = color_aes,
                 size = panel$size %||% 0.6, alpha = alpha, na.rm = TRUE
             )
         },
