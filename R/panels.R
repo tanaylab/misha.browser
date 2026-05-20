@@ -88,15 +88,22 @@ render_data_panel <- function(browser, panel, region, vlines_data = NULL,
     # Add horizontal lines (after faceting so stats apply per facet)
     p <- add_hlines_to_plot(p, panel, data, browser = browser)
 
-    # Apply color scale only if color mapping is used (not for area plots with fixed colors)
+    # Apply color scale only if color mapping is used (not for area plots
+    # with fixed colors). `area` uses the mapping when grouping is set.
     plot_type <- panel$plot_type %||% "line"
-    uses_color_mapping <- plot_type %in% c("line", "point", "segment") ||
-        (plot_type == "histogram" && is.null(panel$fill))
+    has_grouping <- !is.null(color_by) && nzchar(color_by)
+    uses_color_mapping <- plot_type %in% c("line", "line_points", "point", "segment") ||
+        (plot_type == "histogram" && is.null(panel$fill)) ||
+        (plot_type == "area" && has_grouping)
 
     if (uses_color_mapping && length(colors) > 0) {
         p <- p + ggplot2::scale_color_manual(values = colors, na.value = "grey50")
     }
     if (plot_type == "histogram" && is.null(panel$fill) && length(colors) > 0) {
+        p <- p + ggplot2::scale_fill_manual(values = colors, na.value = "grey50")
+    }
+    # Grouped area also needs a fill scale so each track gets its colour.
+    if (plot_type == "area" && has_grouping && length(colors) > 0) {
         p <- p + ggplot2::scale_fill_manual(values = colors, na.value = "grey50")
     }
 
@@ -135,18 +142,62 @@ add_data_layer <- function(p, panel, color_by) {
             )
         },
         "area" = {
-            fill_color <- panel$fill %||% panel$color %||% "grey50"
-            line_color <- panel$color %||% "grey30"
-            p + ggplot2::geom_area(
-                fill = fill_color, alpha = alpha * 0.6, na.rm = TRUE
-            ) + ggplot2::geom_line(
-                color = line_color, linewidth = linewidth * 0.7, na.rm = TRUE
-            )
+            # NB. Use `panel[["color"]]` rather than `panel$color`: R's $
+            # does prefix matching on lists, so `panel$color` silently
+            # resolves to `panel$colors` (the named vector). That returns a
+            # length-2 vector when the panel has multiple tracks and breaks
+            # geom_area's scalar `fill` aesthetic. Explicit `[[ ]]` lookup
+            # avoids the surprise.
+            fill_color <- panel[["fill"]] %||% panel[["color"]] %||% "grey50"
+            line_color <- panel[["color"]] %||% "grey30"
+            # Multi-track area panels with `color_by` grouping: stacked
+            # area-per-track would look messy; fall back to one area per
+            # track via geom_area(aes(group, fill)) only if explicit fill
+            # mapping is requested. Default keeps the single-fill behavior.
+            if (!is.null(color_by) && nzchar(color_by)) {
+                p + ggplot2::geom_area(
+                    ggplot2::aes(fill = .data[[color_by]],
+                                 group = .data[[color_by]]),
+                    alpha = alpha * 0.6, position = "identity",
+                    na.rm = TRUE
+                ) + ggplot2::geom_line(
+                    ggplot2::aes(color = .data[[color_by]],
+                                 group = .data[[color_by]]),
+                    linewidth = linewidth * 0.7, na.rm = TRUE
+                )
+            } else {
+                p + ggplot2::geom_area(
+                    fill = fill_color, alpha = alpha * 0.6, na.rm = TRUE
+                ) + ggplot2::geom_line(
+                    color = line_color, linewidth = linewidth * 0.7,
+                    na.rm = TRUE
+                )
+            }
         },
         "point" = {
             p + ggplot2::geom_point(
                 color_aes,
                 size = panel$size %||% 1, alpha = alpha, na.rm = TRUE
+            )
+        },
+        "line_points" = {
+            # Line through the data with constant-size dots overlaid. Good
+            # for sparse / per-CpG signals (e.g. WGBS meth fraction): the
+            # line shows trend, the dots mark actual measurements.
+            #
+            # `geom_line(na.rm = TRUE)` silently drops NAs but still breaks
+            # the line at each NA position - so with a per-bp iterator where
+            # most positions are non-measured (NA), the line is invisible.
+            # Pre-filter the line's data with a function (NSE form so the
+            # value column name is taken from the layer's aes) so the line
+            # connects consecutive *measured* points across NA gaps.
+            p + ggplot2::geom_line(
+                data = function(d) d[!is.na(d$value), , drop = FALSE],
+                mapping = color_aes,
+                linewidth = linewidth, alpha = alpha
+            ) + ggplot2::geom_point(
+                mapping = color_aes,
+                size = panel$size %||% 0.6, alpha = alpha, na.rm = TRUE
             )
         },
         "histogram" = {

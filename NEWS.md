@@ -1,3 +1,13 @@
+# misha.browser 0.1.4
+
+## New Features
+
+* New `plot_type = "line_points"` draws a line through the data plus
+  constant-size dots at each measurement. Useful for sparse, per-position
+  signals like WGBS methylation fraction where the dots mark actual
+  measured positions and the line traces the local trend. Point size is
+  configurable via `panel$size` (default 0.6); NAs break the line.
+
 # misha.browser 0.1.2
 
 ## New Features
