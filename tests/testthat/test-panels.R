@@ -179,6 +179,17 @@ test_that("add_data_layer with plot_type='line_points' draws line + points", {
     # Point layer respects panel$size
     point_layer <- p$layers[[which(geoms == "GeomPoint")]]
     expect_equal(point_layer$aes_params$size, 0.8)
+
+    # Line layer pre-filters NAs (so per-bp iterator with sparse non-NAs
+    # still draws a continuous line through measured points). The line's
+    # data attribute is a function applied at build time; smoke-test by
+    # building.
+    line_layer <- p$layers[[which(geoms == "GeomLine")]]
+    expect_true(is.function(line_layer$data))
+    built <- ggplot2::ggplot_build(p)
+    # The line layer's built data should have no NAs in y
+    line_idx <- which(geoms == "GeomLine")
+    expect_false(any(is.na(built$data[[line_idx]]$y)))
 })
 
 test_that("add_data_layer line_points size defaults to 0.6", {
