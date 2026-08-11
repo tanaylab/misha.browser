@@ -453,3 +453,48 @@ test_that("cache handles large number of unique keys", {
     options(misha.browser.cache_max_entries = old_max)
     browser_clear_cache()
 })
+
+# Cache keys must be namespaced by the misha genome database, otherwise
+# identically named tracks at identical coordinates collide across genomes.
+
+with_fake_groot <- function(root, code) {
+    old <- current_groot()
+    assign("GROOT", root, envir = misha::.misha)
+    on.exit(assign("GROOT", old, envir = misha::.misha))
+    force(code)
+}
+
+test_that("cache_key differs between genome roots", {
+    key_a <- with_fake_groot("/db/genome_a", cache_key("track1", "chr1", 1000, 2000))
+    key_b <- with_fake_groot("/db/genome_b", cache_key("track1", "chr1", 1000, 2000))
+    key_a2 <- with_fake_groot("/db/genome_a", cache_key("track1", "chr1", 1000, 2000))
+
+    expect_false(key_a == key_b)
+    expect_equal(key_a, key_a2)
+})
+
+test_that("cached values do not leak across genome roots", {
+    browser_clear_cache()
+
+    key_a <- with_fake_groot("/db/genome_a", {
+        k <- cache_key("track1", "chr1", 1000, 2000)
+        cache_set(k, "data_from_a")
+        k
+    })
+
+    with_fake_groot("/db/genome_b", {
+        expect_false(cache_exists(cache_key("track1", "chr1", 1000, 2000)))
+    })
+
+    expect_equal(cache_get(key_a), "data_from_a")
+    browser_clear_cache()
+})
+
+test_that("browser_clear_cache clears the genome-wide quantile cache", {
+    assign("gq_dummy", 1.5, envir = .global_quantile_cache)
+    expect_true(exists("gq_dummy", envir = .global_quantile_cache))
+
+    browser_clear_cache()
+
+    expect_false(exists("gq_dummy", envir = .global_quantile_cache))
+})
