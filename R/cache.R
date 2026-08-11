@@ -44,15 +44,27 @@ browser_cache_config <- function(dir = NULL, enabled = TRUE) {
     invisible(NULL)
 }
 
+#' Current misha genome database root
+#'
+#' Used to namespace cache keys so that switching genomes (gsetroot) does not
+#' serve stale data for identically named tracks / coordinates.
+#'
+#' @return Root path as a string, or "" if misha is not initialized
+#' @keywords internal
+current_groot <- function() {
+    tryCatch(as.character(get("GROOT", envir = misha::.misha)), error = function(e) "")
+}
+
 #' Generate cache key
 #'
-#' Creates an MD5 hash key for caching extracted data.
+#' Creates an MD5 hash key for caching extracted data. The current misha root
+#' is always part of the key.
 #'
 #' @param ... Objects to hash
 #' @return MD5 hash string
 #' @keywords internal
 cache_key <- function(...) {
-    digest::digest(list(...), algo = "md5")
+    digest::digest(list(current_groot(), ...), algo = "md5")
 }
 
 #' Get value from cache (memory first, then disk)
@@ -250,6 +262,9 @@ browser_clear_cache <- function(disk = TRUE) {
 
     # Clear size tracking
     rm(list = ls(.browser_cache_sizes), envir = .browser_cache_sizes)
+
+    # Clear genome-wide quantile cache (see panels.R)
+    rm(list = ls(.global_quantile_cache), envir = .global_quantile_cache)
 
     # Clear disk cache if requested
     if (disk && isTRUE(getOption("misha.browser.disk_cache", TRUE))) {

@@ -1,3 +1,19 @@
+# misha.browser 0.1.4
+
+## Bug Fixes
+
+* Caches are now namespaced by the active misha database. Cache keys were
+  built from track names, region coordinates and config signatures only, so
+  switching genome roots within a session (two profiles with different
+  `misha_root`, or a manual `gsetroot()`) served data from the previous
+  genome whenever a track name and region collided - which they routinely
+  do. Affects track data, annotations, navigator regions, vlines and the
+  genome-wide quantile cache behind `q`-based hlines.
+
+* `browser_clear_cache()` now also clears the genome-wide quantile cache,
+  which it previously left untouched - stale `q`-based hlines survived a
+  manual cache clear.
+
 # misha.browser 0.1.2
 
 ## New Features
