@@ -431,9 +431,9 @@ compute_global_quantile <- function(browser, panel, hline) {
     q <- hline$q %||% 0.5
     track_name <- hline$track %||% panel$tracks[[1]]
 
-    # Build cache key from track config + transforms + quantile
+    # Build cache key from genome root + track config + transforms + quantile
     transform_sig <- digest::digest(panel$transforms)
-    cache_key <- paste0("gq_", track_name, "_", transform_sig, "_", q)
+    cache_key <- paste0("gq_", digest::digest(current_groot()), "_", track_name, "_", transform_sig, "_", q)
 
     if (exists(cache_key, envir = .global_quantile_cache)) {
         return(get(cache_key, envir = .global_quantile_cache))
