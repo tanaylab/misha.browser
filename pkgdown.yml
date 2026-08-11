@@ -1,9 +1,9 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   misha-browser-yaml: misha-browser-yaml.html
-last_built: 2026-05-15T08:47Z
+last_built: 2026-08-11T11:50Z
 urls:
   reference: https://tanaylab.github.io/misha.browser/reference
   article: https://tanaylab.github.io/misha.browser/articles
