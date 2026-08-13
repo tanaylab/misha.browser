@@ -38,6 +38,10 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.4" id="mishabrowser-014">misha.browser 0.1.4<a class="anchor" aria-label="anchor" href="#mishabrowser-014"></a></h2>
 <div class="section level3">
+<h3 id="new-features-0-1-4">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-1-4"></a></h3>
+<ul><li>New <code>plot_type = "line_points"</code> draws a line through the data plus constant-size dots at each measurement. Useful for sparse, per-position signals like WGBS methylation fraction where the dots mark actual measured positions and the line traces the local trend. Point size is configurable via <code>panel$size</code> (default 0.6); NAs break the line.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="bug-fixes-0-1-4">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-4"></a></h3>
 <ul><li><p>Caches are now namespaced by the active misha database. Cache keys were built from track names, region coordinates and config signatures only, so switching genome roots within a session (two profiles with different <code>misha_root</code>, or a manual <code>gsetroot()</code>) served data from the previous genome whenever a track name and region collided - which they routinely do. Affects track data, annotations, navigator regions, vlines and the genome-wide quantile cache behind <code>q</code>-based hlines.</p></li>
 <li><p><code><a href="../reference/browser_clear_cache.html">browser_clear_cache()</a></code> now also clears the genome-wide quantile cache, which it previously left untouched - stale <code>q</code>-based hlines survived a manual cache clear.</p></li>

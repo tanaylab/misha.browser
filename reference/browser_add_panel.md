@@ -52,7 +52,10 @@ browser_add_panel(
 
 - plot_type:
 
-  Plot type: "line", "area", "point", "histogram", "segment"
+  Plot type: "line", "line_points", "area", "point", "histogram",
+  "segment". "line_points" draws a line through the data plus
+  constant-size dots at each measurement, useful for sparse per-position
+  signals like WGBS methylation fraction.
 
 - colors:
 
