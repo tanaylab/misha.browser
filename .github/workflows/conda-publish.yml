@@ -30,8 +30,9 @@ jobs:
           miniforge-version: latest
           channels: conda-forge
           channel-priority: strict
-          activate-environment: build
 
+      # conda-build must live in base: current conda only registers the
+      # `build` subcommand from the base env, not the active one.
       - name: Install conda-build and anaconda-client
         run: |
           conda install -y conda-build anaconda-client
