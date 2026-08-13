@@ -56,7 +56,7 @@ create_panel_form <- function(ns, panel, index, available_tracks) {
                     shiny::selectInput(
                         ns(paste0("pnl_plot_type_", index)),
                         "Plot Type",
-                        choices = c("line", "area", "point", "histogram", "segment"),
+                        choices = c("line", "line_points", "area", "point", "histogram", "segment"),
                         selected = panel$plot_type %||% "line"
                     )
                 ),
