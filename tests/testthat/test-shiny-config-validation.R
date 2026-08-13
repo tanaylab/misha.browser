@@ -81,6 +81,18 @@ test_that("validate_panel_full accepts valid panel types", {
     }
 })
 
+test_that("validate_panel_full accepts all valid plot_types", {
+    valid <- c("line", "line_points", "area", "point", "histogram", "segment")
+    for (pt in valid) {
+        panel <- list(name = paste0("p_", pt), type = "data",
+                      tracks = c("t1"), plot_type = pt)
+        result <- validate_panel_full(panel, 1, vtrack_names = "t1")
+        plot_errors <- unlist(result)
+        expect_false(any(grepl("Plot type must be one of", plot_errors)),
+                     info = paste("plot_type:", pt))
+    }
+})
+
 # =============================================================================
 # Tests for validate_plot_section
 # =============================================================================

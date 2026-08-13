@@ -158,6 +158,100 @@ test_that("apply_panel_theme sets legend title to panel name", {
 })
 
 # =============================================================================
+# Tests for plot_type = "line_points"
+# =============================================================================
+
+test_that("add_data_layer with plot_type='line_points' draws line + points", {
+    df <- data.frame(
+        pos = 1:10,
+        value = c(1, 2, NA, 4, 5, 6, NA, 8, 9, 10),
+        track = "t1",
+        stringsAsFactors = FALSE
+    )
+    p_base <- ggplot2::ggplot(df, ggplot2::aes(x = pos, y = value))
+    panel <- list(plot_type = "line_points", size = 0.8)
+    p <- add_data_layer(p_base, panel, color_by = NULL)
+
+    # Two layers: GeomLine, GeomPoint
+    geoms <- vapply(p$layers, function(l) class(l$geom)[[1]], character(1))
+    expect_setequal(geoms, c("GeomLine", "GeomPoint"))
+
+    # Point layer respects panel$size
+    point_layer <- p$layers[[which(geoms == "GeomPoint")]]
+    expect_equal(point_layer$aes_params$size, 0.8)
+
+    # Line layer pre-filters NAs (so per-bp iterator with sparse non-NAs
+    # still draws a continuous line through measured points). The line's
+    # data attribute is a function applied at build time; smoke-test by
+    # building.
+    line_layer <- p$layers[[which(geoms == "GeomLine")]]
+    expect_true(is.function(line_layer$data))
+    built <- ggplot2::ggplot_build(p)
+    # The line layer's built data should have no NAs in y
+    line_idx <- which(geoms == "GeomLine")
+    expect_false(any(is.na(built$data[[line_idx]]$y)))
+})
+
+test_that("add_data_layer line_points size defaults to 0.6", {
+    df <- data.frame(pos = 1:3, value = c(1, 2, 3), track = "t",
+                     stringsAsFactors = FALSE)
+    p_base <- ggplot2::ggplot(df, ggplot2::aes(x = pos, y = value))
+    p <- add_data_layer(p_base, list(plot_type = "line_points"),
+                        color_by = NULL)
+    geoms <- vapply(p$layers, function(l) class(l$geom)[[1]], character(1))
+    point_layer <- p$layers[[which(geoms == "GeomPoint")]]
+    expect_equal(point_layer$aes_params$size, 0.6)
+})
+
+test_that("area + multi-track grouping renders without aes-length error", {
+    # Regression: `panel$color` was partial-matching to `panel$colors` (a
+    # named vector), and the fixed `fill = fill_color` was getting a
+    # length-2 value, which made ggplot abort with "Aesthetics must be
+    # either length 1 or the same as the data".
+    df <- data.frame(
+        pos = c(1, 2, 3, 1, 2, 3),
+        value = c(0.1, 0.5, 0.9, 0.2, 0.6, 0.8),
+        track = rep(c("a", "b"), each = 3),
+        stringsAsFactors = FALSE
+    )
+    p_base <- ggplot2::ggplot(df, ggplot2::aes(x = pos, y = value))
+    panel <- list(plot_type = "area",
+                  colors = c(a = "#1b4f8e", b = "#7fb3d5"))
+    p <- add_data_layer(p_base, panel, color_by = "track")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[[1]], character(1))
+    expect_setequal(geoms, c("GeomArea", "GeomLine"))
+    # Build it - this is what previously errored.
+    expect_no_error(ggplot2::ggplot_build(p))
+})
+
+test_that("area without grouping keeps single fill color", {
+    df <- data.frame(pos = 1:5, value = c(1, 2, 3, 2, 1), track = "t",
+                     stringsAsFactors = FALSE)
+    p_base <- ggplot2::ggplot(df, ggplot2::aes(x = pos, y = value))
+    p <- add_data_layer(p_base, list(plot_type = "area"), color_by = NULL)
+    geoms <- vapply(p$layers, function(l) class(l$geom)[[1]], character(1))
+    expect_setequal(geoms, c("GeomArea", "GeomLine"))
+    expect_no_error(ggplot2::ggplot_build(p))
+})
+
+test_that("line_points respects color_by grouping", {
+    df <- data.frame(
+        pos = c(1, 2, 3, 1, 2, 3),
+        value = c(0.1, 0.5, 0.9, 0.2, 0.6, 0.8),
+        track = rep(c("a", "b"), each = 3),
+        stringsAsFactors = FALSE
+    )
+    p_base <- ggplot2::ggplot(df, ggplot2::aes(x = pos, y = value))
+    p <- add_data_layer(p_base, list(plot_type = "line_points"),
+                        color_by = "track")
+    geoms <- vapply(p$layers, function(l) class(l$geom)[[1]], character(1))
+    expect_setequal(geoms, c("GeomLine", "GeomPoint"))
+    # Both layers should carry the color mapping
+    line_layer <- p$layers[[which(geoms == "GeomLine")]]
+    expect_true("colour" %in% names(line_layer$mapping))
+})
+
+# =============================================================================
 # Tests for ggplot panel rendering (Feature 2)
 # =============================================================================
 
